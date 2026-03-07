@@ -38,9 +38,25 @@ export default function BharatBuddy() {
   const [loading, setLoading] = useState(false);
   const [activeFeature, setActiveFeature] = useState("default");
   const [lifeScore, setLifeScore] = useState(72);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const conversationHistory = useRef([]);
+
+  // PWA Install Prompt
+  useEffect(() => {
+    const handler = (e) => { e.preventDefault(); setInstallPrompt(e); };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const result = await installPrompt.userChoice;
+    if (result.outcome === 'accepted') setInstallPrompt(null);
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -119,16 +135,33 @@ export default function BharatBuddy() {
       height: "100vh",
       background: "linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%)",
       overflow: "hidden",
+      position: "relative",
     }}>
+
+      {/* Mobile overlay */}
+      {showSidebar && (
+        <div
+          onClick={() => setShowSidebar(false)}
+          style={{
+            position: "fixed", inset: 0,
+            background: "rgba(0,0,0,0.6)", zIndex: 9,
+          }}
+        />
+      )}
 
       {/* LEFT PANEL - Sidebar */}
       <div style={{
         width: "280px",
-        background: "rgba(255,255,255,0.04)",
+        background: "rgba(10,10,10,0.98)",
         borderRight: "1px solid rgba(255,255,255,0.08)",
         display: "flex",
         flexDirection: "column",
         backdropFilter: "blur(20px)",
+        position: window.innerWidth <= 768 ? "fixed" : "relative",
+        left: window.innerWidth <= 768 ? (showSidebar ? 0 : "-290px") : 0,
+        top: 0, bottom: 0,
+        zIndex: 10,
+        transition: "left 0.3s ease",
       }}>
         {/* Logo */}
         <div style={{
@@ -218,6 +251,19 @@ export default function BharatBuddy() {
           textAlign: "center",
           lineHeight: 1.6,
         }}>
+          {installPrompt && (
+            <button onClick={handleInstall} style={{
+              width: "100%", padding: "10px",
+              background: "linear-gradient(135deg, #25D366, #128C7E)",
+              border: "none", borderRadius: "10px",
+              color: "#fff", fontWeight: 700, fontSize: "13px",
+              cursor: "pointer", marginBottom: "10px",
+              fontFamily: "inherit",
+              boxShadow: "0 4px 15px rgba(37,211,102,0.3)",
+            }}>
+              📲 App Install करें
+            </button>
+          )}
           🔒 आपकी बातें safe हैं<br />
           Made with ❤️ for Bharat
         </div>
@@ -228,14 +274,25 @@ export default function BharatBuddy() {
 
         {/* Chat Header */}
         <div style={{
-          padding: "16px 24px",
+          padding: "12px 16px",
           background: "rgba(255,255,255,0.03)",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
           display: "flex",
           alignItems: "center",
-          gap: "14px",
+          gap: "10px",
           backdropFilter: "blur(20px)",
         }}>
+          {/* Hamburger for mobile */}
+          <button
+            onClick={() => setShowSidebar(!showSidebar)}
+            className="mobile-only"
+            style={{
+              background: "none", border: "none",
+              color: "#fff", fontSize: "22px",
+              cursor: "pointer", padding: "4px 8px",
+              display: "none",
+            }}
+          >☰</button>
           <div style={{ position: "relative" }}>
             <div style={{
               width: "44px", height: "44px",
@@ -259,18 +316,17 @@ export default function BharatBuddy() {
               {loading ? "सोच रहा हूँ..." : "Online • हमेशा available"}
             </div>
           </div>
-          <div style={{
-            background: "rgba(37,211,102,0.15)",
-            border: "1px solid rgba(37,211,102,0.3)",
-            borderRadius: "20px",
-            padding: "6px 14px",
-            color: "#25D366",
-            fontSize: "12px",
-            fontWeight: 600,
-            display: "flex", alignItems: "center", gap: "6px",
-          }}>
-            <span>📱</span> WhatsApp-first
-          </div>
+          {installPrompt && (
+            <button onClick={handleInstall} style={{
+              background: "linear-gradient(135deg, #25D366, #128C7E)",
+              border: "none", borderRadius: "20px",
+              padding: "8px 16px",
+              color: "#fff", fontSize: "12px", fontWeight: 700,
+              cursor: "pointer", display: "flex", alignItems: "center", gap: "6px",
+              fontFamily: "inherit",
+              boxShadow: "0 4px 15px rgba(37,211,102,0.3)",
+            }}>📲 Install</button>
+          )}
         </div>
 
         {/* WhatsApp-style background pattern */}
@@ -513,6 +569,13 @@ export default function BharatBuddy() {
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
         input::placeholder { color: rgba(255,255,255,0.25); }
+        @media (max-width: 768px) {
+          .mobile-only { display: block !important; }
+        }
+        @media (display-mode: standalone) {
+          /* PWA mode — extra top padding for status bar */
+          body { padding-top: env(safe-area-inset-top); }
+        }
       `}</style>
     </div>
   );
