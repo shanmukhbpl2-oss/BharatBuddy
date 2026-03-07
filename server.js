@@ -214,6 +214,9 @@ app.get("/webhook/aisensy", (req, res) => {
   if (mode === "subscribe" && token === verifyToken) {
     console.log("✅ Webhook verified");
     res.status(200).send(challenge);
+  } else if (!mode) {
+    // Browser access - show friendly message
+    res.status(200).json({ status: "BharatBuddy WhatsApp Webhook is active! 🚀" });
   } else {
     res.status(403).send("Forbidden");
   }
@@ -227,6 +230,10 @@ app.get("/health", (req, res) => {
 // Serve frontend in production
 app.use(express.static(join(__dirname, "dist")));
 app.get("*", (req, res) => {
+  // Don't serve index.html for API/webhook routes
+  if (req.path.startsWith("/api") || req.path.startsWith("/webhook") || req.path === "/health") {
+    return res.status(404).json({ error: "Not found" });
+  }
   res.sendFile(join(__dirname, "dist", "index.html"));
 });
 
