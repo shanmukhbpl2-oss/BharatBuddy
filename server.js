@@ -249,7 +249,7 @@ app.post("/api/tts", async (req, res) => {
       body: JSON.stringify({
         inputs: [text.slice(0, 500)],
         target_language_code: "hi-IN",
-        speaker: "anushka",
+        speaker: "kavya",
         model: "bulbul:v2",
       }),
     });
