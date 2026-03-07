@@ -1,3 +1,11 @@
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+  process.exit(1);
+});
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection:", reason);
+  process.exit(1);
+});
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -240,6 +248,8 @@ app.post("/api/tts", async (req, res) => {
   if (!sarvamKey) return res.status(500).json({ error: "Sarvam API key not configured" });
 
   try {
+    console.log("🔊 TTS Request received - Text:", text.substring(0, 50));
+    
     const response = await fetch("https://api.sarvam.ai/text-to-speech", {
       method: "POST",
       headers: {
@@ -249,14 +259,14 @@ app.post("/api/tts", async (req, res) => {
       body: JSON.stringify({
         inputs: [text.slice(0, 500)],
         target_language_code: "hi-IN",
-        speaker: "kavya",
-        model: "bulbul:v2",
+        speaker: "priya",
+        model: "bulbul:v3",
       }),
     });
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      console.error("Sarvam TTS error:", response.status, err);
+      console.error("❌ Sarvam TTS error:", response.status, err);
       return res.status(response.status).json({ error: "TTS failed", details: err });
     }
 
@@ -264,47 +274,98 @@ app.post("/api/tts", async (req, res) => {
     const audioBase64 = data.audios?.[0];
     if (!audioBase64) return res.status(500).json({ error: "No audio returned" });
 
+    console.log("✅ TTS Success - Audio length:", audioBase64.length);
     res.json({ audio: audioBase64 });
   } catch (err) {
-    console.error("TTS error:", err.message);
+    console.error("❌ TTS error:", err.message);
     res.status(500).json({ error: "TTS request failed" });
   }
 });
 
 // Speech-to-Text: Convert user's voice to text
+// Sarvam STT expects multipart/form-data with a file field
 app.post("/api/stt", async (req, res) => {
-  const { audio } = req.body; // base64 encoded audio
+  const { audio, mimeType } = req.body; // base64 encoded audio + mime type
   if (!audio) return res.status(400).json({ error: "audio (base64) is required" });
 
   const sarvamKey = process.env.SARVAM_API_KEY;
   if (!sarvamKey) return res.status(500).json({ error: "Sarvam API key not configured" });
 
   try {
-    const response = await fetch("https://api.sarvam.ai/speech-to-text-translate", {
+    console.log("🎤 STT Request received - Audio size:", audio.length, "bytes, MimeType:", mimeType);
+    
+    // Convert base64 back to a Buffer and build FormData
+    const audioBuffer = Buffer.from(audio, "base64");
+    console.log("📦 Audio buffer size:", audioBuffer.length, "bytes");
+    
+    const ext = (mimeType || "audio/webm").includes("ogg") ? "ogg" : "webm";
+    const filename = `recording.${ext}`;
+
+    // Build multipart form using Node built-ins (no extra deps)
+    const boundary = `----BharatBuddyBoundary${Date.now()}`;
+    const CRLF = "\r\n";
+
+    const partHeader = [
+      `--${boundary}`,
+      `Content-Disposition: form-data; name="file"; filename="${filename}"`,
+      `Content-Type: ${mimeType || "audio/webm"}`,
+      "",
+      "",
+    ].join(CRLF);
+
+    const partFooter = `${CRLF}--${boundary}--${CRLF}`;
+
+    const modelPart = [
+      `--${boundary}`,
+      `Content-Disposition: form-data; name="model"`,
+      "",
+      "saarika:v2.5",
+      "",
+    ].join(CRLF);
+
+    const langPart = [
+      `--${boundary}`,
+      `Content-Disposition: form-data; name="language_code"`,
+      "",
+      "hi-IN",
+      "",
+    ].join(CRLF);
+
+    const body = Buffer.concat([
+      Buffer.from(modelPart + CRLF, "utf-8"),
+      Buffer.from(langPart + CRLF, "utf-8"),
+      Buffer.from(partHeader, "utf-8"),
+      audioBuffer,
+      Buffer.from(partFooter, "utf-8"),
+    ]);
+
+    console.log("📤 Sending to Sarvam STT API with boundary:", boundary, "- Total size:", body.length, "bytes");
+
+    const response = await fetch("https://api.sarvam.ai/speech-to-text", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": `multipart/form-data; boundary=${boundary}`,
         "api-subscription-key": sarvamKey,
+        "Content-Length": body.length,
       },
-      body: JSON.stringify({
-        input: audio,
-        language_code: "hi-IN",
-        model: "saarika:v2",
-      }),
+      body,
     });
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      console.error("Sarvam STT error:", response.status, err);
+      console.error("❌ Sarvam STT error:", response.status, err);
+      console.error("Response headers:", response.headers);
       return res.status(response.status).json({ error: "STT failed", details: err });
     }
 
     const data = await response.json();
     const transcript = data.transcript || "";
+    console.log("✅ STT Success:", transcript);
     res.json({ text: transcript });
   } catch (err) {
-    console.error("STT error:", err.message);
-    res.status(500).json({ error: "STT request failed" });
+    console.error("❌ STT error:", err.message);
+    console.error("Full error:", err);
+    res.status(500).json({ error: "STT request failed", message: err.message });
   }
 });
 

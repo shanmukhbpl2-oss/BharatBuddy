@@ -37,5 +37,6 @@
       "url": "/?feature=expense",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
-  ]
+  ],
+  "webhook": "https://bharatbuddy.onrender.com/webhook/aisensy"
 }

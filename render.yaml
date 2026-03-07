@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: bharatbuddy
+    env: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        scope: build
+      - key: SARVAM_API_KEY
+        scope: build
+      - key: AISENSY_API_KEY
+        scope: build
+      - key: WEBHOOK_VERIFY_TOKEN
+        scope: build
+      - key: NODE_ENV
+        value: production

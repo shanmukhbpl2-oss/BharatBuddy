@@ -42,11 +42,19 @@ export default function BharatBuddy() {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [playingId, setPlayingId] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const conversationHistory = useRef([]);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+
+  // Responsive: track window width
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // PWA Install Prompt
   useEffect(() => {
@@ -66,7 +74,9 @@ export default function BharatBuddy() {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      // Try webm first, fallback to ogg
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/ogg';
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -76,7 +86,7 @@ export default function BharatBuddy() {
 
       mediaRecorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop());
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
         const reader = new FileReader();
         reader.onloadend = async () => {
           const base64 = reader.result.split(',')[1];
@@ -85,7 +95,7 @@ export default function BharatBuddy() {
             const res = await fetch("/api/stt", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ audio: base64 }),
+              body: JSON.stringify({ audio: base64, mimeType }),
             });
             const data = await res.json();
             if (data.text && data.text.trim()) {
@@ -165,6 +175,9 @@ export default function BharatBuddy() {
     else if (lowerText.includes("योजना") || lowerText.includes("scheme") || lowerText.includes("सरकार")) setActiveFeature("govt");
     else if (lowerText.includes("वापस") || lowerText.includes("back")) setActiveFeature("default");
 
+    // Close sidebar on mobile after sending
+    if (isMobile) setShowSidebar(false);
+
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
@@ -219,7 +232,7 @@ export default function BharatBuddy() {
     }}>
 
       {/* Mobile overlay */}
-      {showSidebar && (
+      {showSidebar && isMobile && (
         <div
           onClick={() => setShowSidebar(false)}
           style={{
@@ -237,8 +250,8 @@ export default function BharatBuddy() {
         display: "flex",
         flexDirection: "column",
         backdropFilter: "blur(20px)",
-        position: window.innerWidth <= 768 ? "fixed" : "relative",
-        left: window.innerWidth <= 768 ? (showSidebar ? 0 : "-290px") : 0,
+        position: isMobile ? "fixed" : "relative",
+        left: isMobile ? (showSidebar ? 0 : "-290px") : 0,
         top: 0, bottom: 0,
         zIndex: 10,
         transition: "left 0.3s ease",
@@ -296,7 +309,7 @@ export default function BharatBuddy() {
           {FEATURES.map((f) => (
             <div
               key={f.id}
-              onClick={() => sendMessage(f.label + " के बारे में बताओ")}
+              onClick={() => { sendMessage(f.label + " के बारे में बताओ"); if (isMobile) setShowSidebar(false); }}
               style={{
                 display: "flex", alignItems: "center", gap: "10px",
                 padding: "10px 12px",
@@ -350,7 +363,7 @@ export default function BharatBuddy() {
       </div>
 
       {/* MAIN CHAT AREA */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", minWidth: 0 }}>
 
         {/* Chat Header */}
         <div style={{
@@ -361,18 +374,19 @@ export default function BharatBuddy() {
           alignItems: "center",
           gap: "10px",
           backdropFilter: "blur(20px)",
+          flexShrink: 0,
         }}>
           {/* Hamburger for mobile */}
-          <button
-            onClick={() => setShowSidebar(!showSidebar)}
-            className="mobile-only"
-            style={{
-              background: "none", border: "none",
-              color: "#fff", fontSize: "22px",
-              cursor: "pointer", padding: "4px 8px",
-              display: "none",
-            }}
-          >☰</button>
+          {isMobile && (
+            <button
+              onClick={() => setShowSidebar(!showSidebar)}
+              style={{
+                background: "none", border: "none",
+                color: "#fff", fontSize: "22px",
+                cursor: "pointer", padding: "4px 8px",
+              }}
+            >☰</button>
+          )}
           <div style={{ position: "relative" }}>
             <div style={{
               width: "44px", height: "44px",
@@ -389,10 +403,10 @@ export default function BharatBuddy() {
               border: "2px solid #1a1a2e",
             }} />
           </div>
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ color: "#fff", fontWeight: 700, fontSize: "15px" }}>BharatBuddy</div>
             <div style={{ color: "#25D366", fontSize: "12px", display: "flex", alignItems: "center", gap: "4px" }}>
-              <span style={{ width: "6px", height: "6px", background: "#25D366", borderRadius: "50%", display: "inline-block" }} />
+              <span style={{ width: "6px", height: "6px", background: "#25D366", borderRadius: "50%", display: "inline-block", flexShrink: 0 }} />
               {loading ? "सोच रहा हूँ..." : "Online • हमेशा available"}
             </div>
           </div>
@@ -405,6 +419,7 @@ export default function BharatBuddy() {
               cursor: "pointer", display: "flex", alignItems: "center", gap: "6px",
               fontFamily: "inherit",
               boxShadow: "0 4px 15px rgba(37,211,102,0.3)",
+              flexShrink: 0,
             }}>📲 Install</button>
           )}
         </div>
@@ -544,6 +559,7 @@ export default function BharatBuddy() {
           overflowX: "auto",
           zIndex: 1,
           scrollbarWidth: "none",
+          flexShrink: 0,
         }}>
           {(QUICK_REPLIES[activeFeature] || QUICK_REPLIES.default).map((reply, i) => (
             <button
@@ -583,6 +599,7 @@ export default function BharatBuddy() {
           backdropFilter: "blur(20px)",
           borderTop: "1px solid rgba(255,255,255,0.06)",
           zIndex: 1,
+          flexShrink: 0,
         }}>
           <form onSubmit={handleSubmit} style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <div style={{
@@ -610,14 +627,15 @@ export default function BharatBuddy() {
                   fontSize: "14px",
                   fontFamily: "inherit",
                   padding: "8px 0",
+                  minWidth: 0,
                 }}
               />
               <button
                 type="button"
                 onMouseDown={startRecording}
                 onMouseUp={stopRecording}
-                onTouchStart={startRecording}
-                onTouchEnd={stopRecording}
+                onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
+                onTouchEnd={(e) => { e.preventDefault(); stopRecording(); }}
                 style={{
                   background: isRecording ? "rgba(255,50,50,0.3)" : "transparent",
                   border: "none",
@@ -628,6 +646,7 @@ export default function BharatBuddy() {
                   lineHeight: 1,
                   borderRadius: "50%",
                   animation: isRecording ? "pulse 1s ease-in-out infinite" : "none",
+                  flexShrink: 0,
                 }}
                 title={isRecording ? "बोलिए... 🎤" : "दबा के बोलें (Hold to speak)"}
               >{isRecording ? "⏺️" : "🎤"}</button>
@@ -669,15 +688,12 @@ export default function BharatBuddy() {
           0%, 100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.6; transform: scale(1.15); }
         }
-        ::-webkit-scrollbar { width: 4px; }
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
         input::placeholder { color: rgba(255,255,255,0.25); }
-        @media (max-width: 768px) {
-          .mobile-only { display: block !important; }
-        }
         @media (display-mode: standalone) {
-          /* PWA mode — extra top padding for status bar */
           body { padding-top: env(safe-area-inset-top); }
         }
       `}</style>
