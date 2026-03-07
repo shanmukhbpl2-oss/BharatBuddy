@@ -40,9 +40,13 @@ export default function BharatBuddy() {
   const [lifeScore, setLifeScore] = useState(72);
   const [showSidebar, setShowSidebar] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [playingId, setPlayingId] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const conversationHistory = useRef([]);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
   // PWA Install Prompt
   useEffect(() => {
@@ -56,6 +60,82 @@ export default function BharatBuddy() {
     installPrompt.prompt();
     const result = await installPrompt.userChoice;
     if (result.outcome === 'accepted') setInstallPrompt(null);
+  };
+
+  // 🎤 Voice Recording (STT)
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64 = reader.result.split(',')[1];
+          setLoading(true);
+          try {
+            const res = await fetch("/api/stt", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ audio: base64 }),
+            });
+            const data = await res.json();
+            if (data.text && data.text.trim()) {
+              sendMessage(data.text.trim());
+            } else {
+              setLoading(false);
+            }
+          } catch {
+            setLoading(false);
+          }
+        };
+        reader.readAsDataURL(audioBlob);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.log("Mic access denied:", err);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  // 🔊 Text-to-Speech (TTS)
+  const playTTS = async (text, msgId) => {
+    if (playingId) return;
+    setPlayingId(msgId);
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (data.audio) {
+        const audio = new Audio(`data:audio/wav;base64,${data.audio}`);
+        audio.onended = () => setPlayingId(null);
+        audio.onerror = () => setPlayingId(null);
+        audio.play();
+      } else {
+        setPlayingId(null);
+      }
+    } catch {
+      setPlayingId(null);
+    }
   };
 
   useEffect(() => {
@@ -404,6 +484,21 @@ export default function BharatBuddy() {
                   justifyContent: "flex-end",
                   gap: "4px",
                 }}>
+                  {msg.from === "bot" && (
+                    <button
+                      onClick={() => playTTS(msg.text, msg.id)}
+                      disabled={playingId !== null}
+                      style={{
+                        background: "none", border: "none",
+                        color: playingId === msg.id ? "#25D366" : "rgba(255,255,255,0.4)",
+                        cursor: playingId ? "not-allowed" : "pointer",
+                        padding: "2px 4px", fontSize: "14px",
+                        marginRight: "auto",
+                        animation: playingId === msg.id ? "pulse 1s ease-in-out infinite" : "none",
+                      }}
+                      title="🔊 सुनें"
+                    >{playingId === msg.id ? "🔊" : "🔈"}</button>
+                  )}
                   {msg.time}
                   {msg.from === "user" && <span style={{ color: "#4FC3F7" }}>✓✓</span>}
                 </div>
@@ -519,18 +614,23 @@ export default function BharatBuddy() {
               />
               <button
                 type="button"
-                onClick={() => sendMessage("🎤 Voice message")}
+                onMouseDown={startRecording}
+                onMouseUp={stopRecording}
+                onTouchStart={startRecording}
+                onTouchEnd={stopRecording}
                 style={{
-                  background: "transparent",
+                  background: isRecording ? "rgba(255,50,50,0.3)" : "transparent",
                   border: "none",
-                  color: "rgba(255,255,255,0.4)",
+                  color: isRecording ? "#FF4444" : "rgba(255,255,255,0.4)",
                   cursor: "pointer",
                   padding: "8px",
                   fontSize: "18px",
                   lineHeight: 1,
+                  borderRadius: "50%",
+                  animation: isRecording ? "pulse 1s ease-in-out infinite" : "none",
                 }}
-                title="Voice note (coming soon)"
-              >🎤</button>
+                title={isRecording ? "बोलिए... 🎤" : "दबा के बोलें (Hold to speak)"}
+              >{isRecording ? "⏺️" : "🎤"}</button>
             </div>
             <button
               type="submit"
@@ -564,6 +664,10 @@ export default function BharatBuddy() {
         @keyframes bounce {
           0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
           30% { transform: translateY(-6px); opacity: 1; }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.15); }
         }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }

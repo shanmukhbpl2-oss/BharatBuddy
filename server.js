@@ -227,6 +227,87 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", whatsappUsers: whatsappConversations.size });
 });
 
+// ==========================================
+// 🎤 Sarvam AI Voice Integration (TTS + STT)
+// ==========================================
+
+// Text-to-Speech: Convert bot reply to Hindi audio
+app.post("/api/tts", async (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: "text is required" });
+
+  const sarvamKey = process.env.SARVAM_API_KEY;
+  if (!sarvamKey) return res.status(500).json({ error: "Sarvam API key not configured" });
+
+  try {
+    const response = await fetch("https://api.sarvam.ai/text-to-speech", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-subscription-key": sarvamKey,
+      },
+      body: JSON.stringify({
+        inputs: [text.slice(0, 500)],
+        target_language_code: "hi-IN",
+        speaker: "anushka",
+        model: "bulbul:v2",
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      console.error("Sarvam TTS error:", response.status, err);
+      return res.status(response.status).json({ error: "TTS failed", details: err });
+    }
+
+    const data = await response.json();
+    const audioBase64 = data.audios?.[0];
+    if (!audioBase64) return res.status(500).json({ error: "No audio returned" });
+
+    res.json({ audio: audioBase64 });
+  } catch (err) {
+    console.error("TTS error:", err.message);
+    res.status(500).json({ error: "TTS request failed" });
+  }
+});
+
+// Speech-to-Text: Convert user's voice to text
+app.post("/api/stt", async (req, res) => {
+  const { audio } = req.body; // base64 encoded audio
+  if (!audio) return res.status(400).json({ error: "audio (base64) is required" });
+
+  const sarvamKey = process.env.SARVAM_API_KEY;
+  if (!sarvamKey) return res.status(500).json({ error: "Sarvam API key not configured" });
+
+  try {
+    const response = await fetch("https://api.sarvam.ai/speech-to-text-translate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-subscription-key": sarvamKey,
+      },
+      body: JSON.stringify({
+        input: audio,
+        language_code: "hi-IN",
+        model: "saarika:v2",
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      console.error("Sarvam STT error:", response.status, err);
+      return res.status(response.status).json({ error: "STT failed", details: err });
+    }
+
+    const data = await response.json();
+    const transcript = data.transcript || "";
+    res.json({ text: transcript });
+  } catch (err) {
+    console.error("STT error:", err.message);
+    res.status(500).json({ error: "STT request failed" });
+  }
+});
+
 // Serve frontend in production
 app.use(express.static(join(__dirname, "dist")));
 app.get("*", (req, res) => {
