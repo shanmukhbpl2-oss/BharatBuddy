@@ -7,10 +7,7 @@ export const connectDB = async () => {
       throw new Error("MONGODB_URI not found in .env");
     }
 
-    await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(mongoUri);
 
     console.log("✅ MongoDB connected successfully");
     return mongoose.connection;
