@@ -11,6 +11,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import { connectDB } from "./db.js";
+import dataRoutes from "./routes/data.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -371,6 +373,12 @@ app.post("/api/stt", async (req, res) => {
 
 // Serve frontend in production
 app.use(express.static(join(__dirname, "dist")));
+
+// ==========================================
+// 📊 Data Storage Routes (MongoDB)
+// ==========================================
+app.use("/api/data", dataRoutes);
+
 app.get("*", (req, res) => {
   // Don't serve index.html for API/webhook routes
   if (req.path.startsWith("/api") || req.path.startsWith("/webhook") || req.path === "/health") {
@@ -380,7 +388,18 @@ app.get("*", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`🚀 BharatBuddy server running on http://localhost:${PORT}`);
-  console.log(`📱 WhatsApp webhook: http://localhost:${PORT}/webhook/aisensy`);
-});
+
+// Connect to MongoDB and start server
+(async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`🚀 BharatBuddy server running on http://localhost:${PORT}`);
+      console.log(`📊 Database routes: /api/data/*`);
+      console.log(`📱 WhatsApp webhook: http://localhost:${PORT}/webhook/aisensy`);
+    });
+  } catch (err) {
+    console.error("Failed to start server:", err.message);
+    process.exit(1);
+  }
+})();
