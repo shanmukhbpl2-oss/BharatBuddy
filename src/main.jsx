@@ -9,7 +9,7 @@ document.body.style.overflow = 'hidden'
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js?v=3')
+    navigator.serviceWorker.register('/sw.js?v=4')
       .then((reg) => console.log('SW registered:', reg.scope))
       .catch((err) => console.log('SW registration failed:', err))
   })
