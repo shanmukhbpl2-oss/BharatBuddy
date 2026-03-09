@@ -272,7 +272,7 @@ export default function App() {
             {panel==="location"&&<LocPane  onClose={()=>setPanel(null)} onAi={ai}/>}
             {panel==="report"  &&<RepPane  onClose={()=>setPanel(null)}/>}
             {panel==="weather" &&<WPane    onClose={()=>setPanel(null)} onAi={ai}/>}
-            {panel==="whatsapp"&&<WhatsAppPane onClose={()=>setPanel(null)}/>}
+            {panel==="whatsapp"&&<WhatsAppPane onClose={()=>setPanel(null)} theme={theme}/>}
 
             <div ref={endR}/>
           </div>
@@ -860,77 +860,64 @@ function RepPane({onClose}) {
   );
 }
 
-function WhatsAppPane({onClose}) {
-  const [conn,setConn]=useState(false);
-  const [qr,setQr]=useState(false);
-  const [msgs,setMsgs]=useState([]);
-  
-  const connect=()=>{
-    setQr(true);
-    setTimeout(()=>{
-      setQr(false);
-      setConn(true);
-      setMsgs([{f:"दादाजी",t:"बेटा, दवाई कब लेनी है?",time:"14:32"},{f:"माँ",t:"सब्ज़ी ले आना बाज़ार से",time:"15:10"}]);
-    },2500);
+function WhatsAppPane({onClose, theme="dark"}) {
+  const [checking, setChecking] = useState(true);
+  const [status, setStatus] = useState({ ok:false, users:0, error:"" });
+  const t = THEMES[theme];
+  const isLight = theme === "light";
+  const webhookUrl = `${window.location.origin}/webhook/aisensy`;
+
+  const checkStatus = async () => {
+    setChecking(true);
+    try {
+      const r = await fetch("/health");
+      const data = await r.json();
+      setStatus({ ok: !!data?.status, users: Number(data?.whatsappUsers || 0), error: "" });
+    } catch {
+      setStatus({ ok:false, users:0, error:"Server reachable nahi hai" });
+    } finally {
+      setChecking(false);
+    }
   };
-  
+
+  useEffect(() => { checkStatus(); }, []);
+
+  const copyWebhook = async () => {
+    try {
+      await navigator.clipboard.writeText(webhookUrl);
+      alert("Webhook URL copy ho gaya ✅");
+    } catch {
+      alert("Copy failed. URL manually copy करें:");
+    }
+  };
+
   return (
-    <Pane icon="💬" title="WhatsApp AI Bot" sub={conn?"Connected ✓":"Not Connected"} col="#25D366" onClose={onClose}>
-      {!conn&&!qr&&(
-        <div style={{padding:"18px 16px",textAlign:"center"}}>
-          <div style={{fontSize:60,marginBottom:12}}>💬</div>
-          <div style={{fontSize:14,fontWeight:700,color:"#F1F5F9",marginBottom:8}}>WhatsApp AI Bot</div>
-          <div style={{fontSize:12,color:"rgba(255,255,255,0.4)",marginBottom:16,lineHeight:1.6}}>Connect करें और family को auto-reply करें:
-          <br/>• दवाई reminders
-          <br/>• खर्च updates
-          <br/>• AI powered जवाब</div>
-          <button onClick={connect} style={{...S.abtn,background:"linear-gradient(135deg,#25D366,#128C7E)",width:"100%"}}>📱 WhatsApp Connect करें</button>
-        </div>
-      )}
-      {qr&&(
-        <div style={{padding:"18px 16px",textAlign:"center"}}>
-          <div style={{fontSize:13,color:"#25D366",fontWeight:700,marginBottom:14}}>📱 QR Code Scan करें</div>
-          <div style={{width:180,height:180,background:"#fff",borderRadius:16,margin:"0 auto 14px",display:"flex",alignItems:"center",justifyContent:"center",fontSize:80}}>⬛⬜⬛<br/>⬜⬛⬜<br/>⬛⬜⬛</div>
-          <div style={{fontSize:11,color:"rgba(255,255,255,0.35)",marginBottom:8}}>WhatsApp → Linked Devices → Link a Device</div>
-          <div style={{display:"flex",gap:6,alignItems:"center",justifyContent:"center"}}>
-            <div style={{width:6,height:6,borderRadius:"50%",background:"#25D366",animation:"pulse 0.8s infinite"}}/>
-            <span style={{fontSize:11,color:"#25D366",fontWeight:700}}>Connecting...</span>
+    <Pane icon="💬" title="WhatsApp AI Bot" sub={status.ok?"Webhook Active ✓":"Setup Required"} col="#25D366" onClose={onClose}>
+      <div style={{padding:"14px 16px"}}>
+        <div style={{background:isLight?"rgba(37,211,102,0.1)":"rgba(37,211,102,0.08)",borderRadius:14,padding:"11px 14px",marginBottom:12,border:"1px solid rgba(37,211,102,0.24)",display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:10,height:10,borderRadius:"50%",background:status.ok?"#25D366":"#FF8C42",boxShadow:status.ok?"0 0 10px #25D366":"none"}}/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:12,fontWeight:800,color:status.ok?"#25D366":"#FF8C42"}}>{checking?"Status check...":status.ok?"Webhook Connected":"Connection Pending"}</div>
+            <div style={{fontSize:10,color:t.subText}}>Active WhatsApp users: {status.users}</div>
           </div>
+          <button onClick={checkStatus} style={{...S.abtn,padding:"7px 11px",fontSize:10,background:isLight?"rgba(0,0,0,0.06)":"rgba(255,255,255,0.06)",color:t.text,border:`1px solid ${t.border}`}}>Refresh</button>
         </div>
-      )}
-      {conn&&(
-        <div style={{padding:"12px 16px"}}>
-          <div style={{background:"rgba(37,211,102,0.08)",borderRadius:14,padding:"10px 14px",marginBottom:12,border:"1px solid rgba(37,211,102,0.2)",display:"flex",alignItems:"center",gap:10}}>
-            <div style={{width:10,height:10,borderRadius:"50%",background:"#25D366",boxShadow:"0 0 10px #25D366"}}/>
-            <div style={{flex:1}}>
-              <div style={{fontSize:12,fontWeight:700,color:"#25D366"}}>WhatsApp Connected ✓</div>
-              <div style={{fontSize:10,color:"rgba(255,255,255,0.35)"}}>AI Bot Active • Auto-Reply ON</div>
-            </div>
-          </div>
-          
-          <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",fontWeight:700,textTransform:"uppercase",letterSpacing:0.8,marginBottom:8}}>📨 Recent Messages</div>
-          {msgs.map((m,i)=>(
-            <div key={i} style={{background:"rgba(255,255,255,0.03)",borderRadius:12,padding:"10px 13px",marginBottom:7,border:"1px solid rgba(255,255,255,0.06)"}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                <span style={{fontSize:11,fontWeight:700,color:"#E2E8F0"}}>{m.f}</span>
-                <span style={{fontSize:9,color:"rgba(255,255,255,0.25)"}}>{m.time}</span>
-              </div>
-              <div style={{fontSize:12,color:"rgba(255,255,255,0.5)",marginBottom:6}}>💬 "{m.t}"</div>
-              <div style={{background:"rgba(37,211,102,0.06)",borderRadius:8,padding:"6px 10px",border:"1px solid rgba(37,211,102,0.15)"}}>
-                <div style={{fontSize:10,color:"#25D366",fontWeight:700,marginBottom:2}}>🤖 AI Auto-Reply भेजा:</div>
-                <div style={{fontSize:11,color:"rgba(255,255,255,0.45)",lineHeight:1.5}}>
-                  {i===0?"दादाजी, आपकी BP की दवाई शाम 7 बजे लेनी है! 💊":"माँ, आलू ₹900/क्विंटल है आज मंडी में 🥔"}
-                </div>
-              </div>
-            </div>
-          ))}
-          
-          <div style={{display:"flex",gap:7,marginTop:10}}>
-            <button onClick={()=>setConn(false)} style={{...S.abtn,flex:1,background:"rgba(255,78,106,0.15)",color:"#FF4E6A",border:"1px solid rgba(255,78,106,0.25)"}}>Disconnect</button>
-            <button style={{...S.abtn,flex:1,background:"rgba(255,255,255,0.05)",color:"rgba(255,255,255,0.4)",border:"1px solid rgba(255,255,255,0.08)"}}>⚙️ Settings</button>
-          </div>
+
+        <div style={{fontSize:12,fontWeight:700,color:t.text,marginBottom:6}}>Setup Steps (AiSensy)</div>
+        <div style={{fontSize:11,color:t.subText,lineHeight:1.65,marginBottom:10}}>
+          1. AiSensy dashboard me webhook URL set करें।
+          <br/>2. URL me yeh use करें: <b style={{color:t.text}}>{webhookUrl}</b>
+          <br/>3. Verify token same रखें: <b style={{color:t.text}}>WEBHOOK_VERIFY_TOKEN</b>
+          <br/>4. WhatsApp se message bhejke test करें।
         </div>
-      )}
+
+        {status.error && <div style={{fontSize:11,color:"#FF4E6A",marginBottom:10}}>⚠️ {status.error}</div>}
+
+        <div style={{display:"flex",gap:7}}>
+          <button onClick={copyWebhook} style={{...S.abtn,flex:1,background:"linear-gradient(135deg,#25D366,#128C7E)"}}>📋 Webhook Copy</button>
+          <button onClick={()=>window.open("https://app.aisensy.com", "_blank")} style={{...S.abtn,flex:1,background:isLight?"rgba(0,0,0,0.08)":"rgba(255,255,255,0.08)",color:t.text,border:`1px solid ${t.border}`}}>🌐 AiSensy Open</button>
+        </div>
+      </div>
     </Pane>
   );
 }
