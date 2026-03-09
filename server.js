@@ -23,47 +23,93 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const SYSTEM_PROMPT = `You are BharatBuddy (भारतबडी), India's most helpful AI life assistant. You speak primarily in Hindi mixed with simple English (Hinglish). You are warm, friendly, and deeply understand Indian culture, values, and daily problems.
+const SYSTEM_PROMPT = `You are BharatBuddy (भारतबडी), India's most trusted AI life assistant. You speak in warm Hinglish (Hindi + English mix). Be like a caring elder sibling - kind, helpful, and understanding.
 
 You help with:
-- 💊 दवाई reminders and health guidance  
-- 💰 Daily expense tracking और budget management
-- 🏛️ Government schemes (PM Kisan, PM Awas Yojana, Beti Bachao, etc.) की जानकारी
-- ⚖️ Legal rights in simple Hindi
-- 🔧 Local service providers ढूंढना
-- 📚 Children's homework help
+- 💊 Medicine reminders and health guidance (always say "Doctor se zaroor milein 🙏" for serious concerns)
+- 💸 Daily expense tracking और budget management
+- 🏛️ Government schemes (PM Kisan, PM Awas Yojana, Ayushman Bharat, etc.)
+- ⚖️ Legal rights और basic legal guidance in simple Hindi
+- 🌾 Kisan help - mandi rates, fasal tips, farming schemes
+- 🏦 Finance - EMI calculation, loan advice, savings tips
+- 🛒 Shopping - price comparison, best deals (Amazon, Flipkart, Meesho)
+- 👨‍👩‍👧 Family management - reminders for all family members
+- 📍 Location services - nearby hospitals, pharmacies, CSC
+- 📚 Homework help for Class 1-12 (Hindi medium)
 - 💙 Emotional support and mental wellness
 - 🏥 Basic health guidance
 
-IMPORTANT RULES:
-- Always respond in Hindi/Hinglish (mix of Hindi and English)
-- Keep responses SHORT (2-4 lines max) and conversational
-- Use emojis naturally 
-- Be warm like a trusted friend/dost
-- For medicine reminders: ask what medicine, what time
-- For expenses: confirm the amount and category
-- For government schemes: give eligibility in simple points
-- End responses with a helpful follow-up question
-- Never give medical diagnoses, always say "doctor se milein"
-- Use ₹ for currency
+CRITICAL RULES:
+- Keep responses SHORT (3-5 lines max) and conversational
+- Always respond in Hindi/Hinglish - never pure English
+- Use emojis naturally but don't overdo it
+- Be warm, friendly, and respectful like a trusted dost
+- Use ₹ for all currency/money
+- For medical issues: give basic info but always say "Doctor se zaroor milein 🙏"
+- For government schemes: explain eligibility simply
+- Format important info with *bold* (using asterisks)
+- End with a helpful follow-up question when relevant
+- If you don't know something, say so honestly
 
-Start every first message warmly introducing yourself as BharatBuddy.`;
+RESPONSE STYLE:
+✅ Good: "Haan! PM Kisan में registration ke liye Aadhaar और bank account chahiye। Online apply kar sakte ho pmkisan.gov.in पर। Kya aapka Aadhaar bank se linked hai? 🏛️"
+❌ Bad: Long paragraphs, pure English, formal tone`;
 
+// ==========================================
+// 💬 Main Chat API - Supports text and images
+// ==========================================
 app.post("/api/chat", async (req, res) => {
-  const { messages } = req.body;
+  const { message, image, history, messages } = req.body;
 
-  if (!Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: "Messages array is required" });
+  // Support both old format (messages array) and new format (message + history)
+  let conversationMessages = messages || history || [];
+  
+  // If using new format, add the current message
+  if (message) {
+    const userMessage = {
+      role: "user",
+      content: message
+    };
+    
+    // If image is provided, format as multimodal message
+    if (image) {
+      userMessage.content = [
+        {
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: "image/jpeg",
+            data: image
+          }
+        },
+        {
+          type: "text",
+          text: message
+        }
+      ];
+    }
+    
+    conversationMessages = [...conversationMessages, userMessage];
+  }
+
+  if (!Array.isArray(conversationMessages) || conversationMessages.length === 0) {
+    return res.status(400).json({ 
+      error: "Messages array is required",
+      reply: "कोई message नहीं आया! 🙏"
+    });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey || apiKey === "your_api_key_here") {
+    console.error("⚠️ ANTHROPIC_API_KEY not configured");
     return res.status(500).json({
       reply: "⚠️ API key set नहीं है! .env file में ANTHROPIC_API_KEY डालें। 🙏",
     });
   }
 
   try {
+    console.log(`💬 Chat request - Messages: ${conversationMessages.length}, Has image: ${!!image}`);
+    
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -75,13 +121,13 @@ app.post("/api/chat", async (req, res) => {
         model: "claude-sonnet-4-20250514",
         max_tokens: 1000,
         system: SYSTEM_PROMPT,
-        messages,
+        messages: conversationMessages,
       }),
     });
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      console.error("Anthropic API error:", response.status, errData);
+      console.error("❌ Anthropic API error:", response.status, errData);
       return res.status(response.status).json({
         reply: "माफ़ करें, API से कुछ गड़बड़ हो गई। थोड़ी देर बाद try करें! 🙏",
       });
@@ -90,9 +136,10 @@ app.post("/api/chat", async (req, res) => {
     const data = await response.json();
     const reply = data.content?.[0]?.text || "माफ़ करें, कुछ गड़बड़ हो गई। 🙏";
 
+    console.log(`✅ Chat reply sent - Length: ${reply.length} chars`);
     res.json({ reply });
   } catch (err) {
-    console.error("Server error:", err.message);
+    console.error("❌ Server error:", err.message);
     res.status(500).json({
       reply: "अरे! Server में कुछ problem आ गई। 🙏",
     });

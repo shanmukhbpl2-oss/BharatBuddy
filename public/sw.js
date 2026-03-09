@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bharatbuddy-v1';
+const CACHE_NAME = 'bharatbuddy-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',

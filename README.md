@@ -1,23 +1,40 @@
 # 🇮🇳 BharatBuddy — आपका AI दोस्त
 
-India's Hinglish AI life assistant — PWA + WhatsApp bot powered by Claude & Sarvam AI.
+India's most comprehensive Hinglish AI life assistant — PWA + WhatsApp bot powered by Claude & Sarvam AI.
 
-## ✨ Features
+## ✨ Premium Features (16 Services)
 
+### 🆓 Free Services (6)
 | Feature | Description |
 |---------|-------------|
-| 💊 दवाई Reminder | Set medicine reminders in Hindi |
-| 💰 खर्च Tracker | Track daily expenses in ₹ |
-| 🏛️ सरकारी योजना | PM Kisan, PM Awas Yojana, Beti Bachao info |
-| ⚖️ Legal Rights | Know your rights in simple Hindi |
-| 🔧 Local Services | Find plumbers, electricians nearby |
-| 🏥 Health Guide | Basic health guidance (not diagnosis) |
-| 📚 Homework Help | Kids' homework in Hindi/English |
-| 💙 Emotional Support | Chat when feeling low |
-| 🎤 Voice Input | Speak in Hindi via Sarvam AI STT |
-| 🔊 Voice Output | Bot replies read aloud via Sarvam AI TTS |
+| 💊 दवाई Reminder | Set medicine reminders with time tracking |
+| 💸 खर्च Tracker | Daily expense tracking with categories |
+| 🌤️ मौसम | Live weather updates for Indian cities |
+| 🏛️ Schemes | 28+ government योजनाएं info (PM Kisan, etc.) |
+| 🚨 Emergency | Quick access to 108, 112 helplines |
+| 💬 AI Chat | Unlimited chat in Hindi/Hinglish |
+
+### ⭐ Premium Services (₹99/month)
+| Feature | Description |
+|---------|-------------|
+| 👨‍👩‍👧 Family Manager | Manage reminders for all family members |
+| 🏦 Finance | EMI calculator, loan comparison, savings tips |
+| 🛒 Shopping | Compare prices across Amazon, Flipkart, Meesho |
+| 🌾 Kisan Tools | Live mandi prices, fasal guide, farming schemes |
+| ⚖️ Legal Help | RTI, rights, FIR guide in simple Hindi |
+| 📍 Near Me | Find nearby hospitals, pharmacies, blood banks |
+| 📚 Homework | Class 1-12 help in Hindi medium |
+| 📊 Monthly Report | PDF download with AI insights |
+| 📄 Documents | Aadhaar, PAN, passport guidance |
+| 🔔 Smart Alerts | Scheme deadlines, bill reminders |
+
+### 🎙️ Voice & Vision
+| Feature | Description |
+|---------|-------------|
+| 🎤 Voice Input | Speak in Hindi (Sarvam AI STT) |
+| 🔊 Voice Output | Bot replies read aloud (Sarvam AI TTS) |
+| 📸 Image Analysis | Upload bills, prescriptions, documents |
 | 📱 WhatsApp Bot | Chat via WhatsApp through AiSensy |
-| 📲 PWA | Install on mobile — works offline |
 
 ## 🚀 Quick Start
 
@@ -35,9 +52,10 @@ cp .env.example .env
 ```
 
 Required keys:
-- `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com/)
-- `SARVAM_API_KEY` — from [app.sarvam.ai](https://app.sarvam.ai/) *(for voice features)*
-- `AISENSY_API_KEY` — from [aisensy.com](https://aisensy.com/) *(for WhatsApp bot)*
+- `ANTHROPIC_API_KEY` — from [console.anthropic.com](https://console.anthropic.com/) **(REQUIRED)**
+- `MONGODB_URI` — from [mongodb.com/cloud/atlas](https://mongodb.com/cloud/atlas) **(REQUIRED)**
+- `SARVAM_API_KEY` — from [app.sarvam.ai](https://app.sarvam.ai/) *(optional, for voice features)*
+- `AISENSY_API_KEY` — from [aisensy.com](https://aisensy.com/) *(optional, for WhatsApp bot)*
 
 ### 3. Run in development mode
 
