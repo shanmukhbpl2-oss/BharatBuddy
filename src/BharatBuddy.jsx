@@ -121,7 +121,10 @@ export default function App() {
     return {
       root: {...S.root, background:t.bg, color:t.text},
       hdr: {...S.hdr, background:t.hdrBg, borderColor:t.border},
+      hName: {...S.hName, color:t.text},
+      hSub: {...S.hSub, color:t.subText},
       sidebar: {...S.sidebar, background:t.sidebarBg, borderColor:t.border},
+      sbCount: {...S.sbCount, color:t.subText, background: theme==="dark"?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.04)", borderColor:t.border},
       chatPanel: {...S.chatPanel, background:t.chatBg},
       chat: {...S.chat},
       promoBar: {...S.promoBar, background: theme==="dark"?"rgba(255,214,10,0.04)":"rgba(217,119,6,0.08)", borderBottomColor: theme==="dark"?"rgba(255,214,10,0.1)":"rgba(217,119,6,0.18)"},
@@ -168,10 +171,10 @@ export default function App() {
           </div>
           <div>
             <div style={{display:"flex",alignItems:"center",gap:7}}>
-              <span style={S.hName}>BharatBuddy</span>
+              <span style={styled.hName}>BharatBuddy</span>
               {isPrem&&<span style={S.premTag}>✦ PRO</span>}
             </div>
-            <div style={S.hSub}><span style={S.onDot}/>Online • AI Powered</div>
+            <div style={styled.hSub}><span style={S.onDot}/>Online • AI Powered</div>
           </div>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -190,7 +193,7 @@ export default function App() {
           {/* Sidebar header */}
           <div style={S.sbHdr}>
             <span style={{...S.sbTitle, color:t.text}}>🇮🇳 Services</span>
-            <span style={{...S.sbCount, color:t.subText}}>{SVCS.length} Total</span>
+            <span style={styled.sbCount}>{SVCS.length} Total</span>
           </div>
 
           <div style={S.sbScroll}>
@@ -251,12 +254,12 @@ export default function App() {
           <div style={styled.chat}>
             <div style={styled.datePill}>{new Date().toLocaleDateString("hi-IN",{weekday:"long",day:"numeric",month:"long"})}</div>
 
-            {msgs.map(m=><Bubble key={m.id} m={m} onSvc={onSvc} onBtn={ai} bbl={styled.bbl} ubble={styled.ubble} btext={styled.btext} btime={styled.btime}/>)}
+            {msgs.map(m=><Bubble key={m.id} m={m} onSvc={onSvc} onBtn={ai} bbl={styled.bbl} bbbl={styled.bbbl} ubble={styled.ubble} btext={styled.btext} btime={styled.btime}/>)}
 
             {load&&(
               <div style={{display:"flex",gap:8,alignItems:"flex-end",marginBottom:8}}>
                 <Av/>
-                <div style={styled.typingBubble}><Dot d={0}/><Dot d={.18}/><Dot d={.36}/></div>
+                <div style={styled.typingBubble}><Dot d={0} color={theme==="dark"?"rgba(255,255,255,0.25)":"rgba(15,23,42,0.35)"}/><Dot d={.18} color={theme==="dark"?"rgba(255,255,255,0.25)":"rgba(15,23,42,0.35)"}/><Dot d={.36} color={theme==="dark"?"rgba(255,255,255,0.25)":"rgba(15,23,42,0.35)"}/></div>
               </div>
             )}
 
@@ -472,7 +475,7 @@ function SubScreen({onBack,onOk}) {
 /* ═══════════════════════════════════════════════
    MENU CARD — BEST DESIGN EVER
 ═══════════════════════════════════════════════ */
-function Bubble({m,onSvc,onBtn,bbl,ubble,btext,btime}) {
+function Bubble({m,onSvc,onBtn,bbl,bbbl,ubble,btext,btime}) {
   if(m.type==="menu")  return <MenuCard onSvc={onSvc}/>;
   if(m.type==="btns")  return <BtnRow items={m.items} onBtn={onBtn}/>;
   if(m.type==="photo") return (
@@ -487,7 +490,7 @@ function Bubble({m,onSvc,onBtn,bbl,ubble,btext,btime}) {
   return (
     <div style={{display:"flex",justifyContent:isU?"flex-end":"flex-start",marginBottom:6,animation:"fadeUp 0.2s ease",gap:8,alignItems:"flex-end"}}>
       {!isU&&<Av/>}
-      <div style={{...bbl,...(isU?ubble:S.bbbl),maxWidth:"80%"}}>
+      <div style={{...bbl,...(isU?ubble:bbbl),maxWidth:"80%"}}>
         <div style={btext}>{fmt(m.text)}</div>
         <div style={btime}>{m.time}{isU&&" ✓✓"}</div>
       </div>
@@ -962,7 +965,7 @@ function BtnRow({items,onBtn}) {
 }
 
 const Av=()=><div style={{width:28,height:28,background:"linear-gradient(135deg,#00D09C,#00916E)",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0,alignSelf:"flex-end",marginRight:5,marginBottom:4,boxShadow:"0 4px 14px rgba(0,208,156,0.35)"}}>🤖</div>;
-const Dot=({d})=><div style={{width:6,height:6,background:"rgba(255,255,255,0.25)",borderRadius:"50%",animation:`bounce 1.2s ${d}s ease-in-out infinite`}}/>;
+const Dot=({d,color="rgba(255,255,255,0.25)"})=><div style={{width:6,height:6,background:color,borderRadius:"50%",animation:`bounce 1.2s ${d}s ease-in-out infinite`}}/>;
 const fmt=text=>text?text.split("\n").map((l,i)=><div key={i} dangerouslySetInnerHTML={{__html:l.replace(/\*(.*?)\*/g,"<b>$1</b>")||"&nbsp;"}} style={{lineHeight:1.65}}/>):null;
 
 const S = {
