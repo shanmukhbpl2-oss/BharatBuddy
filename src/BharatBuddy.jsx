@@ -56,6 +56,7 @@ export default function App() {
   const [subScr,setSubScr]= useState(false);
   const [rec,   setRec]   = useState(false);
   const [theme, setTheme] = useState("dark");
+  const [lang,  setLang]  = useState("hi"); // hi or en
   const t = THEMES[theme];
   const endR=useRef(null); const inpR=useRef(null);
   const filR=useRef(null); const recR=useRef(null);
@@ -197,6 +198,9 @@ export default function App() {
           </div>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
+          <button onClick={()=>setLang(lang==="hi"?"en":"hi")} style={{background:lang==="hi"?"rgba(255,214,10,0.15)":"rgba(100,150,255,0.15)",border:`1px solid ${lang==="hi"?"rgba(255,214,10,0.3)":"rgba(100,150,255,0.3)"}`,borderRadius:12,color:theme==="dark"?"rgba(255,255,255,0.6)":"rgba(0,0,0,0.6)",fontSize:13,padding:"6px 12px",cursor:"pointer",fontFamily:"inherit",transition:"all 0.2s",fontWeight:600}}>
+            {lang==="hi"?"🇮🇳 हिंदी":"🇬🇧 English"}
+          </button>
           <button onClick={()=>setTheme(theme==="dark"?"light":"dark")} style={{background:theme==="dark"?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.08)",border:`1px solid ${theme==="dark"?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.1)"}`,borderRadius:12,color:theme==="dark"?"rgba(255,255,255,0.6)":"rgba(0,0,0,0.6)",fontSize:16,padding:"6px 12px",cursor:"pointer",fontFamily:"inherit",transition:"all 0.2s"}}>
             {theme==="dark"?"☀️":"🌙"}
           </button>
