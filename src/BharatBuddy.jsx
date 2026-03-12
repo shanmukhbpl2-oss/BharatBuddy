@@ -45,9 +45,50 @@ const THEMES = {
   }
 };
 
+const TRANS = {
+  hi: {
+    welcome: "🙏 *नमस्ते! BharatBuddy में आपका स्वागत है!*\nमैं आपका AI दोस्त हूँ — हर रोज़ की ज़रूरत में मदद!\n💊 दवाई • 💸 खर्च • 🏛 Schemes • 🛒 Shopping\nनीचे से service चुनें या message करें 👇",
+    services: "🇮🇳 Services",
+    free: "Free",
+    premium: "Premium",
+    online: "Online • AI Powered",
+    hiMein: "Hindi में बोलें...",
+    noService: "error loading service",
+    getPremium: "Premium लें",
+    premiumPrice: "सिर्फ ₹99/month",
+    promoText: "6 free services • ",
+    promoHighlight: "₹99 में सब 16 unlock करें",
+    upgrade: "Upgrade →",
+    placeholder: "Hindi में message करें...",
+    listening: "🎤 सुन रहा हूँ...",
+    chromeError: "🎤 Chrome browser use करें!",
+    voiceError: "🎤 Voice error!",
+    apiError: "❌ API error हो गई। फिर से try करें! 🙏",
+  },
+  en: {
+    welcome: "🙏 *Hello! Welcome to BharatBuddy!*\nI'm your AI friend — here to help with everyday needs!\n💊 Medicine • 💸 Expenses • 🏛 Schemes • 🛒 Shopping\nChoose a service below or message me 👇",
+    services: "🌍 Services",
+    free: "Free",
+    premium: "Premium",
+    online: "Online • AI Powered",
+    hiMein: "Speak in English...",
+    noService: "error loading service",
+    getPremium: "Get Premium",
+    premiumPrice: "Only ₹99/month",
+    promoText: "6 free services • ",
+    promoHighlight: "Unlock all 16 for ₹99",
+    upgrade: "Upgrade →",
+    placeholder: "Message in English...",
+    listening: "🎤 Listening...",
+    chromeError: "🎤 Use Chrome browser!",
+    voiceError: "🎤 Voice error!",
+    apiError: "❌ API error occurred. Try again! 🙏",
+  }
+};
+
 export default function App() {
   const [msgs,  setMsgs]  = useState([
-    {id:1,type:"bot",text:"🙏 *नमस्ते! BharatBuddy में आपका स्वागत है!*\nमैं आपका AI दोस्त हूँ — हर रोज़ की ज़रूरत में मदद!\n💊 दवाई • 💸 खर्च • 🏛 Schemes • 🛒 Shopping\nनीचे से service चुनें या message करें 👇",time:T()},
+    {id:1,type:"bot",text:TRANS.hi.welcome,time:T()},
   ]);
   const [input, setInput] = useState("");
   const [load,  setLoad]  = useState(false);
@@ -58,6 +99,7 @@ export default function App() {
   const [theme, setTheme] = useState("dark");
   const [lang,  setLang]  = useState("hi"); // hi or en
   const t = THEMES[theme];
+  const tr = TRANS[lang];
   const endR=useRef(null); const inpR=useRef(null);
   const filR=useRef(null); const recR=useRef(null);
 
@@ -85,13 +127,13 @@ export default function App() {
       });
       
       const data = await response.json();
-      const reply = data.reply || "माफ़ करें, कुछ गड़बड़ हो गई। 🙏";
+      const reply = data.reply || tr.noService;
       push([{type:"bot",text:reply}]);
       setLoad(false);
       inpR.current?.focus();
     } catch(err) {
       console.error("API Error:", err);
-      push([{type:"bot",text:"❌ API error हो गई। फिर से try करें! 🙏"}]);
+      push([{type:"bot",text:tr.apiError}]);
       setLoad(false);
       inpR.current?.focus();
     }
@@ -111,12 +153,12 @@ export default function App() {
     if(!rec){
       try{
         const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-        if(!SR){push([{type:"bot",text:"🎤 Chrome browser use करें!"}]);return;}
-        const r=new SR(); r.lang="hi-IN";
+        if(!SR){push([{type:"bot",text:tr.chromeError}]);return;}
+        const r=new SR(); r.lang=lang==="hi"?"hi-IN":"en-US";
         r.onresult=e=>{setInput(e.results[0][0].transcript);setRec(false);};
         r.onerror=()=>setRec(false); r.onend=()=>setRec(false);
         recR.current=r; r.start(); setRec(true);
-      }catch{push([{type:"bot",text:"🎤 Voice error!"}]);}
+      }catch{push([{type:"bot",text:tr.voiceError}]);}
     }else{recR.current?.stop();setRec(false);}
   };
 
@@ -215,7 +257,7 @@ export default function App() {
         <div style={styled.sidebar}>
           {/* Sidebar header */}
           <div style={S.sbHdr}>
-            <span style={{...S.sbTitle, color:t.text}}>🇮🇳 Services</span>
+            <span style={{...S.sbTitle, color:t.text}}>{tr.services}</span>
             <span style={styled.sbCount}>{SVCS.length} Total</span>
           </div>
 
@@ -224,7 +266,7 @@ export default function App() {
             <div style={S.sbSection}>
               <div style={{...S.sbSectionLabel, color:t.text}}>
                 <div style={{...S.sbPip, background:"#00D09C"}}/>
-                <span style={{fontWeight:900}}>Free</span>
+                <span style={{fontWeight:900}}>{tr.free}</span>
                 <span style={S.sbFreeChip}>{FREE.length}</span>
               </div>
               {FREE.map(s=><SidebarTile key={s.id} s={s} onSvc={onSvc} active={panel===s.id} theme={theme}/>)}
@@ -233,7 +275,7 @@ export default function App() {
             {/* DIVIDER */}
             <div style={S.sbDivider}>
               <div style={{...S.sbDivLine, background:theme==="dark"?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.08)"}}/>
-              <span style={{...S.sbDivText, color:theme==="dark"?"#FFD60A":"#D97706"}}>✦ PREMIUM</span>
+              <span style={{...S.sbDivText, color:theme==="dark"?"#FFD60A":"#D97706"}}>✦ {lang === "hi" ? "प्रीमियम" : "PREMIUM"}</span>
               <div style={{...S.sbDivLine, background:theme==="dark"?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.08)"}}/>
             </div>
 
@@ -241,7 +283,7 @@ export default function App() {
             <div style={S.sbSection}>
               <div style={{...S.sbSectionLabel, color:t.text}}>
                 <div style={{...S.sbPip, background:"#FFD60A"}}/>
-                <span style={{fontWeight:900}}>Premium</span>
+                <span style={{fontWeight:900}}>{tr.premium}</span>
                 <span style={S.sbProChip}>₹99</span>
               </div>
               {PRO.map(s=><SidebarTile key={s.id} s={s} onSvc={onSvc} active={panel===s.id} pro theme={theme}/>)}
@@ -253,8 +295,8 @@ export default function App() {
             <button onClick={()=>setSubScr(true)} style={S.sbUpgrade}>
               <span style={{fontSize:16}}>⭐</span>
               <div>
-                <div style={{fontSize:13,fontWeight:800,color:"#fff"}}>Premium लें</div>
-                <div style={{fontSize:10,color:"rgba(255,255,255,0.55)"}}>सिर्फ ₹99/month</div>
+                <div style={{fontSize:13,fontWeight:800,color:"#fff"}}>{tr.getPremium}</div>
+                <div style={{fontSize:10,color:"rgba(255,255,255,0.55)"}}>{tr.premiumPrice}</div>
               </div>
               <span style={{marginLeft:"auto",fontSize:16}}>→</span>
             </button>
@@ -268,8 +310,8 @@ export default function App() {
           {!isPrem&&(
             <div onClick={()=>setSubScr(true)} style={styled.promoBar}>
               <span>🔒</span>
-              <span style={{fontSize:11,color:t.subText}}>6 free services • <b style={{color:theme==="dark"?"#FFD60A":"#B45309"}}>₹99 में सब 16 unlock करें</b></span>
-              <span style={{marginLeft:"auto",color:theme==="dark"?"#FFD60A":"#B45309",fontWeight:800,fontSize:11}}>Upgrade →</span>
+              <span style={{fontSize:11,color:t.subText}}>{tr.promoText}<b style={{color:theme==="dark"?"#FFD60A":"#B45309"}}>{tr.promoHighlight}</b></span>
+              <span style={{marginLeft:"auto",color:theme==="dark"?"#FFD60A":"#B45309",fontWeight:800,fontSize:11}}>{tr.upgrade}</span>
             </div>
           )}
 
@@ -315,7 +357,7 @@ export default function App() {
           {rec&&(
             <div style={S.recBar}>
               <div style={{width:8,height:8,borderRadius:"50%",background:"#FF4E6A",animation:"pulse 0.8s infinite"}}/>
-              <span style={{fontSize:12,color:"#FF4E6A",fontWeight:700,flex:1}}>🎤 Hindi में बोलें...</span>
+              <span style={{fontSize:12,color:"#FF4E6A",fontWeight:700,flex:1}}>🎤 {lang==="hi"?"बोल रहे हो...":"Listening..."}</span>
               <button onClick={voice} style={{background:"transparent",border:"none",color:"#FF4E6A",cursor:"pointer",fontWeight:700}}>✕</button>
             </div>
           )}
@@ -329,7 +371,7 @@ export default function App() {
             <div style={styled.inputBox}>
               <input ref={inpR} value={input} onChange={e=>setInput(e.target.value)}
                 onKeyDown={e=>e.key==="Enter"&&input.trim()&&ai(input)}
-                placeholder={rec?"🎤 सुन रहा हूँ...":"Hindi में message करें..."}
+                placeholder={rec?tr.listening:tr.placeholder}
                 style={styled.inp} disabled={rec}/>
             </div>
             <button onClick={input.trim()?()=>ai(input):voice}
