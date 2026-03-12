@@ -48,10 +48,10 @@ const THEMES = {
 const TRANS = {
   hi: {
     welcome: "🙏 *नमस्ते! BharatBuddy में आपका स्वागत है!*\nमैं आपका AI दोस्त हूँ — हर रोज़ की ज़रूरत में मदद!\n💊 दवाई • 💸 खर्च • 🏛 Schemes • 🛒 Shopping\nनीचे से service चुनें या message करें 👇",
-    services: "🇮🇳 Services",
-    free: "Free",
-    premium: "Premium",
-    online: "Online • AI Powered",
+    services: "🇮🇳 सेवाएं",
+    free: "मुफ्त",
+    premium: "प्रीमियम",
+    online: "ऑनलाइन • AI सहायक",
     hiMein: "Hindi में बोलें...",
     noService: "error loading service",
     getPremium: "Premium लें",
@@ -86,6 +86,47 @@ const TRANS = {
   }
 };
 
+const SVC_TEXT = {
+  hi: {
+    medicine: { label: "दवाई", sub: "स्मार्ट रिमाइंडर" },
+    expense: { label: "खर्च", sub: "रोज़ का हिसाब" },
+    schemes: { label: "योजनाएं", sub: "28+ योजना" },
+    weather: { label: "मौसम", sub: "लाइव पूर्वानुमान" },
+    whatsapp: { label: "व्हाट्सऐप", sub: "AI बॉट कनेक्ट" },
+    emergency: { label: "इमरजेंसी", sub: "108 • 112 • 100" },
+    news: { label: "समाचार", sub: "हिंदी हेडलाइंस" },
+    family: { label: "परिवार", sub: "5 सदस्य" },
+    finance: { label: "फाइनेंस", sub: "EMI • क्रेडिट" },
+    shopping: { label: "शॉपिंग", sub: "बेस्ट डील्स" },
+    kisan: { label: "किसान", sub: "मंडी • फसल" },
+    legal: { label: "कानूनी", sub: "RTI • अधिकार" },
+    location: { label: "आसपास", sub: "अस्पताल • CSC" },
+    homework: { label: "होमवर्क", sub: "क्लास 1-12" },
+    report: { label: "रिपोर्ट", sub: "मासिक PDF" },
+    document: { label: "दस्तावेज", sub: "आधार • PAN" },
+    chat: { label: "AI चैट", sub: "बात करो" },
+  },
+  en: {
+    medicine: { label: "Medicine", sub: "Smart Reminders" },
+    expense: { label: "Expenses", sub: "Daily Tracker" },
+    schemes: { label: "Schemes", sub: "28+ Yojanas" },
+    weather: { label: "Weather", sub: "Live Forecast" },
+    whatsapp: { label: "WhatsApp", sub: "AI Bot Connect" },
+    emergency: { label: "Emergency", sub: "108 • 112 • 100" },
+    news: { label: "News", sub: "Hindi Headlines" },
+    family: { label: "Family", sub: "5 Members" },
+    finance: { label: "Finance", sub: "EMI • Credit" },
+    shopping: { label: "Shopping", sub: "Best Deals" },
+    kisan: { label: "Farmer", sub: "Mandi • Crop" },
+    legal: { label: "Legal", sub: "RTI • Rights" },
+    location: { label: "Near Me", sub: "Hospital • CSC" },
+    homework: { label: "Homework", sub: "Class 1-12" },
+    report: { label: "Report", sub: "Monthly PDF" },
+    document: { label: "Docs", sub: "Aadhaar • PAN" },
+    chat: { label: "AI Chat", sub: "Talk Now" },
+  },
+};
+
 export default function App() {
   const [msgs,  setMsgs]  = useState([
     {id:1,type:"bot",text:TRANS.hi.welcome,time:T()},
@@ -100,6 +141,10 @@ export default function App() {
   const [lang,  setLang]  = useState("hi"); // hi or en
   const t = THEMES[theme];
   const tr = TRANS[lang];
+  const svcText = SVC_TEXT[lang];
+  const quickChips = lang === "hi"
+    ? ["💊 दवाई","💸 खर्च","🏛 योजनाएं","🛒 डील्स","🏦 EMI","📍 आसपास","📊 रिपोर्ट"]
+    : ["💊 Medicine","💸 Expenses","🏛 Schemes","🛒 Deals","🏦 EMI","📍 Near Me","📊 Report"];
   const endR=useRef(null); const inpR=useRef(null);
   const filR=useRef(null); const recR=useRef(null);
 
@@ -158,8 +203,9 @@ export default function App() {
     if(!s.free&&!isPrem){setSubScr(true);return;}
     const panels=["medicine","expense","family","finance","shopping","kisan","location","report","weather","whatsapp"];
     if(panels.includes(id)){setPanel(id);return;}
-    push([{type:"user",text:s.label}]);
-    setTimeout(()=>ai(`Help with ${s.label} in Hinglish`),200);
+    const label = svcText?.[s.id]?.label || s.label;
+    push([{type:"user",text:label}]);
+    setTimeout(()=>ai(`Help with ${label} in ${lang==="en"?"English":"Hinglish"}`),200);
   };
 
   const voice=()=>{
@@ -282,7 +328,7 @@ export default function App() {
                 <span style={{fontWeight:900}}>{tr.free}</span>
                 <span style={S.sbFreeChip}>{FREE.length}</span>
               </div>
-              {FREE.map(s=><SidebarTile key={s.id} s={s} onSvc={onSvc} active={panel===s.id} theme={theme}/>)}
+              {FREE.map(s=><SidebarTile key={s.id} s={s} onSvc={onSvc} active={panel===s.id} theme={theme} lang={lang}/>)}
             </div>
 
             {/* DIVIDER */}
@@ -299,7 +345,7 @@ export default function App() {
                 <span style={{fontWeight:900}}>{tr.premium}</span>
                 <span style={S.sbProChip}>₹99</span>
               </div>
-              {PRO.map(s=><SidebarTile key={s.id} s={s} onSvc={onSvc} active={panel===s.id} pro theme={theme}/>)}
+              {PRO.map(s=><SidebarTile key={s.id} s={s} onSvc={onSvc} active={panel===s.id} pro theme={theme} lang={lang}/>)}
             </div>
           </div>
 
@@ -357,7 +403,7 @@ export default function App() {
 
           {/* Quick chips */}
           <div style={styled.chipsRow}>
-            {["💊 दवाई","💸 खर्च","🏛 Scheme","🛒 Deal","🏦 EMI","📍 Near Me","📊 Report"].map((c,i)=>(
+            {quickChips.map((c,i)=>(
               <button key={i} onClick={()=>{
                 const map={"💊":"medicine","💸":"expense","🏛":"schemes","🛒":"shopping","🏦":"finance","📍":"location","📊":"report"};
                 const sv=Object.entries(map).find(([k])=>c.startsWith(k));
@@ -405,10 +451,11 @@ export default function App() {
 /* ═══════════════════════════════════════════════
    SIDEBAR TILE
 ═══════════════════════════════════════════════ */
-function SidebarTile({s, onSvc, active, pro, theme}) {
+function SidebarTile({s, onSvc, active, pro, theme, lang="hi"}) {
   const [hov, setHov] = useState(false);
   const on = hov || active;
   const t = THEMES[theme];
+  const txt = SVC_TEXT[lang]?.[s.id] || { label: s.label, sub: s.sub };
   return (
     <button
       onClick={()=>onSvc(s.id)}
@@ -445,8 +492,8 @@ function SidebarTile({s, onSvc, active, pro, theme}) {
         transition:"all 0.18s",
       }}>{s.icon}</div>
       <div style={{flex:1,minWidth:0}}>
-        <div style={{fontSize:14,fontWeight:900,color: on?"#fff":t.text,letterSpacing:"-0.2px",lineHeight:1.2}}>{s.label}</div>
-        <div style={{fontSize:10,fontWeight:600,color: on?"rgba(255,255,255,0.7)":t.subText,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{s.sub}</div>
+        <div style={{fontSize:14,fontWeight:900,color: on?"#fff":t.text,letterSpacing:"-0.2px",lineHeight:1.2}}>{txt.label}</div>
+        <div style={{fontSize:10,fontWeight:600,color: on?"rgba(255,255,255,0.7)":t.subText,marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{txt.sub}</div>
       </div>
     </button>
   );
