@@ -69,13 +69,32 @@ export default function App() {
     push([{type:"user",text:img?"📸 "+text:text}]);
     setInput(""); setLoad(true);
     
-    setTimeout(()=>{
-      const rep="मैं आपकी मदद करने के लिए यहाँ हूँ! 🙏\n\nकृपया बाएं sidebar से कोई service चुनें:\n💊 दवाई • 💸 खर्च • 🌾 Kisan • 🛒 Shopping\n\nया मुझसे कुछ पूछें! 😊";
-      push([{type:"bot",text:rep}]);
-      setLoad(false); 
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          image: img || undefined,
+          history: msgs.filter(m => m.type !== "photo").map(m => ({
+            role: m.type === "user" ? "user" : "assistant",
+            content: m.text
+          }))
+        })
+      });
+      
+      const data = await response.json();
+      const reply = data.reply || "माफ़ करें, कुछ गड़बड़ हो गई। 🙏";
+      push([{type:"bot",text:reply}]);
+      setLoad(false);
       inpR.current?.focus();
-    },800);
-  },[load]);
+    } catch(err) {
+      console.error("API Error:", err);
+      push([{type:"bot",text:"❌ API error हो गई। फिर से try करें! 🙏"}]);
+      setLoad(false);
+      inpR.current?.focus();
+    }
+  },[load,msgs]);
 
   const onSvc = id=>{
     const s=SVCS.find(x=>x.id===id);
