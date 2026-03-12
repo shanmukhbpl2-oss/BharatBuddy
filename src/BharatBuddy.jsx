@@ -105,6 +105,18 @@ export default function App() {
 
   useEffect(()=>{ endR.current?.scrollIntoView({behavior:"smooth"}); },[msgs,load,panel]);
 
+  useEffect(()=>{
+    setMsgs(prev=>{
+      if(!prev.length) return prev;
+      const first = prev[0];
+      const isDefaultWelcome = first.id===1 && (first.text===TRANS.hi.welcome || first.text===TRANS.en.welcome);
+      if(!isDefaultWelcome) return prev;
+      const next=[...prev];
+      next[0]={...first,text:TRANS[lang].welcome};
+      return next;
+    });
+  },[lang]);
+
   const push = arr => setMsgs(p=>[...p,...arr.map((m,i)=>({...m,id:Date.now()+i,time:T()}))]);
 
   const ai = useCallback(async(text,img=null)=>{
@@ -236,7 +248,7 @@ export default function App() {
               <span style={styled.hName}>BharatBuddy</span>
               {isPrem&&<span style={S.premTag}>✦ PRO</span>}
             </div>
-            <div style={styled.hSub}><span style={S.onDot}/>Online • AI Powered</div>
+            <div style={styled.hSub}><span style={S.onDot}/>{tr.online}</div>
           </div>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -246,7 +258,7 @@ export default function App() {
           <button onClick={()=>setTheme(theme==="dark"?"light":"dark")} style={{background:theme==="dark"?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.08)",border:`1px solid ${theme==="dark"?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.1)"}`,borderRadius:12,color:theme==="dark"?"rgba(255,255,255,0.6)":"rgba(0,0,0,0.6)",fontSize:16,padding:"6px 12px",cursor:"pointer",fontFamily:"inherit",transition:"all 0.2s"}}>
             {theme==="dark"?"☀️":"🌙"}
           </button>
-          {!isPrem&&<button onClick={()=>setSubScr(true)} style={S.upBtn}>⭐ ₹99 Premium</button>}
+          {!isPrem&&<button onClick={()=>setSubScr(true)} style={S.upBtn}>⭐ ₹99 {tr.premium}</button>}
         </div>
       </header>
 
@@ -317,7 +329,7 @@ export default function App() {
 
           {/* Chat messages */}
           <div style={styled.chat}>
-            <div style={styled.datePill}>{new Date().toLocaleDateString("hi-IN",{weekday:"long",day:"numeric",month:"long"})}</div>
+            <div style={styled.datePill}>{new Date().toLocaleDateString(lang==="hi"?"hi-IN":"en-IN",{weekday:"long",day:"numeric",month:"long"})}</div>
 
             {msgs.map(m=><Bubble key={m.id} m={m} onSvc={onSvc} onBtn={ai} bbl={styled.bbl} bbbl={styled.bbbl} ubble={styled.ubble} btext={styled.btext} btime={styled.btime}/>)}
 
