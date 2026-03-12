@@ -1,7 +1,7 @@
 ﻿import { useState, useRef, useEffect, useCallback } from "react";
 
 /* ═══════════════════════════════════════════════════════
-   BHARATBUDDY — ABSOLUTE BEST UI
+   BHARATBUDDY — ABSOLUTE BEST UI [Updated with translations]
    Theme: Midnight India — Deep space + Saffron + Emerald
    Font: Plus Jakarta Sans + Noto Sans Devanagari
 ═══════════════════════════════════════════════════════ */
