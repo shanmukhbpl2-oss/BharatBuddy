@@ -131,6 +131,7 @@ export default function App() {
         body: JSON.stringify({
           message: text,
           image: img || undefined,
+          lang,
           history: msgs.filter(m => m.type !== "photo").map(m => ({
             role: m.type === "user" ? "user" : "assistant",
             content: m.text
@@ -149,7 +150,7 @@ export default function App() {
       setLoad(false);
       inpR.current?.focus();
     }
-  },[load,msgs]);
+  },[load,msgs,lang,tr.apiError,tr.noService]);
 
   const onSvc = id=>{
     const s=SVCS.find(x=>x.id===id);

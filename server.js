@@ -59,7 +59,7 @@ RESPONSE STYLE:
 // 💬 Main Chat API - Supports text and images
 // ==========================================
 app.post("/api/chat", async (req, res) => {
-  const { message, image, history, messages } = req.body;
+  const { message, image, history, messages, lang, language } = req.body;
 
   // Support both old format (messages array) and new format (message + history)
   let conversationMessages = messages || history || [];
@@ -109,10 +109,19 @@ app.post("/api/chat", async (req, res) => {
 
   try {
     console.log(`💬 Chat request - Messages: ${conversationMessages.length}, Has image: ${!!image}`);
+
+    const userLang = (language || lang || "hi").toLowerCase();
+    const languageInstruction = userLang === "en"
+      ? "Reply in clear, simple English. Do not switch to Hindi unless user asks."
+      : "Reply in warm Hinglish (Hindi + English mix).";
+
+    const behaviorInstruction =
+      "If user asks about a specific scheme (like PM Kisan/Ayushman), give direct actionable details first (eligibility, documents, apply steps), then ask only one short follow-up. Avoid repeating generic opener lines.";
+    const dynamicSystemPrompt = `${SYSTEM_PROMPT}\n\nLANGUAGE MODE:\n- ${languageInstruction}\n\nANTI-REPETITION RULE:\n- ${behaviorInstruction}`;
     
     // Prepend system prompt as first message for OpenAI format
     const messagesWithSystem = [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: dynamicSystemPrompt },
       ...conversationMessages
     ];
     
