@@ -23,6 +23,46 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const SCHEME_KEYWORDS = {
+  pm_kisan: ["pm kisan", "pm-kisan", "kisan samman nidhi", "किसान"],
+  ayushman_bharat: ["ayushman", "ayushman bharat", "pmjay", "आयुष्मान"],
+  pm_awas: ["pm awas", "awas yojana", "pradhan mantri awas", "आवास"],
+};
+
+function detectSpecificScheme(text = "") {
+  const t = String(text).toLowerCase();
+  for (const [scheme, keys] of Object.entries(SCHEME_KEYWORDS)) {
+    if (keys.some((k) => t.includes(k))) return scheme;
+  }
+  return null;
+}
+
+function fallbackSchemeReply(scheme, lang = "hi") {
+  if (lang === "en") {
+    if (scheme === "pm_kisan") {
+      return "*PM Kisan:* Eligible small/marginal farmer families can get ₹6,000/year in 3 installments.\nDocuments: Aadhaar, bank account, land records.\nApply: pmkisan.gov.in or nearest CSC.\nWould you like a step-by-step registration checklist?";
+    }
+    if (scheme === "ayushman_bharat") {
+      return "*Ayushman Bharat (PM-JAY):* Eligible families can get up to ₹5 lakh/year cashless treatment at empaneled hospitals.\nCheck eligibility on pmjay.gov.in or Ayushman app.\nKeep Aadhaar/ration details ready for eKYC.\nDo you want hospital search steps?";
+    }
+    if (scheme === "pm_awas") {
+      return "*PM Awas Yojana:* Support for eligible families to build/upgrade homes.\nDocuments: Aadhaar, income/residence proof, bank details, land/house info.\nApply via local body/Gram Panchayat or official PMAY portal.\nWant category-wise eligibility (Urban vs Gramin)?";
+    }
+    return "Please share the exact scheme name, and I will give eligibility, documents, and apply steps directly.";
+  }
+
+  if (scheme === "pm_kisan") {
+    return "*PM Kisan:* eligible kisan parivaar ko saal ka ₹6,000 (3 installments) milta hai.\nDocuments: Aadhaar, bank account, zameen details.\nApply: pmkisan.gov.in ya nearest CSC.\nKya main step-by-step registration list bheju?";
+  }
+  if (scheme === "ayushman_bharat") {
+    return "*Ayushman Bharat (PM-JAY):* eligible parivaar ko ₹5 lakh/year tak cashless treatment milta hai.\nEligibility pmjay.gov.in ya Ayushman app par check karein.\nAadhaar/ration details ready rakhein.\nKya aapko nearby empaneled hospital find karna hai?";
+  }
+  if (scheme === "pm_awas") {
+    return "*PM Awas Yojana:* eligible parivaar ko ghar banane/upgrade ke liye sahayata milti hai.\nDocuments: Aadhaar, income/residence proof, bank details, land/house info.\nApply: Gram Panchayat/ULB ya PMAY portal.\nUrban vs Gramin eligibility samjhau?";
+  }
+  return "Scheme ka exact naam batayein, main direct eligibility, documents aur apply steps bata deta hoon.";
+}
+
 const SYSTEM_PROMPT = `You are BharatBuddy (भारतबडी), India's most trusted AI life assistant. You speak in warm Hinglish (Hindi + English mix). Be like a caring elder sibling - kind, helpful, and understanding.
 
 You help with:
@@ -110,6 +150,9 @@ app.post("/api/chat", async (req, res) => {
   try {
     console.log(`💬 Chat request - Messages: ${conversationMessages.length}, Has image: ${!!image}`);
 
+    const latestUserText = String(message || conversationMessages[conversationMessages.length - 1]?.content || "");
+    const specificScheme = detectSpecificScheme(latestUserText);
+
     const userLang = (language || lang || "hi").toLowerCase();
     const languageInstruction = userLang === "en"
       ? "Reply in clear, simple English. Do not switch to Hindi unless user asks."
@@ -117,7 +160,10 @@ app.post("/api/chat", async (req, res) => {
 
     const behaviorInstruction =
       "If user asks about a specific scheme (like PM Kisan/Ayushman), give direct actionable details first (eligibility, documents, apply steps), then ask only one short follow-up. Avoid repeating generic opener lines.";
-    const dynamicSystemPrompt = `${SYSTEM_PROMPT}\n\nLANGUAGE MODE:\n- ${languageInstruction}\n\nANTI-REPETITION RULE:\n- ${behaviorInstruction}`;
+    const specificSchemeInstruction = specificScheme
+      ? `User explicitly asked about ${specificScheme}. Do NOT ask 'which scheme'. Give direct details now.`
+      : "If user did not specify a scheme, then ask one short clarifying question.";
+    const dynamicSystemPrompt = `${SYSTEM_PROMPT}\n\nLANGUAGE MODE:\n- ${languageInstruction}\n\nANTI-REPETITION RULE:\n- ${behaviorInstruction}\n- ${specificSchemeInstruction}`;
     
     // Prepend system prompt as first message for OpenAI format
     const messagesWithSystem = [
@@ -147,7 +193,12 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content || "माफ़ करें, कुछ गड़बड़ हो गई। 🙏";
+    let reply = data.choices?.[0]?.message?.content || "माफ़ करें, कुछ गड़बड़ हो गई। 🙏";
+
+    // Hard guard: if a specific scheme was asked, never return generic "which scheme" style response.
+    if (specificScheme && /kaunsi scheme|which scheme|pm kisan, pm awas|ayushman bharat,? ya/i.test(reply.toLowerCase())) {
+      reply = fallbackSchemeReply(specificScheme, userLang);
+    }
 
     console.log(`✅ Chat reply sent - Length: ${reply.length} chars`);
     res.json({ reply });
