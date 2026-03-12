@@ -4,15 +4,17 @@ services:
     env: node
     plan: free
     buildCommand: npm install && npm run build
-    startCommand: npm start
+    startCommand: node server.js
     envVars:
-      - key: ANTHROPIC_API_KEY
+      - key: OPENAI_API_KEY
         scope: runtime
       - key: SARVAM_API_KEY
         scope: runtime
       - key: AISENSY_API_KEY
         scope: runtime
       - key: WEBHOOK_VERIFY_TOKEN
+        scope: runtime
+      - key: MONGODB_URI
         scope: runtime
       - key: NODE_ENV
         value: production

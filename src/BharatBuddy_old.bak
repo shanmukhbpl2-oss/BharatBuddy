@@ -1,0 +1,989 @@
+import { useState, useRef, useEffect, useCallback } from "react";
+
+/* ═══════════════════════════════════════════════════════
+   BHARATBUDDY — ABSOLUTE BEST UI
+   Theme: Midnight India — Deep space + Saffron + Emerald
+   Font: Plus Jakarta Sans + Noto Sans Devanagari
+═══════════════════════════════════════════════════════ */
+
+const SYS = `You are BharatBuddy, India's most trusted AI life assistant. Speak in warm Hinglish. Be like a caring elder sibling. Help with medicine, expenses, government schemes, legal, kisan, shopping, loans, family, homework, emergency. Keep responses to 3-5 lines. Use emojis. For health say "Doctor se zaroor milein 🙏". Use ₹ for money.`;
+
+// ── PREMIUM COLOR SYSTEM ───────────────────────────────────────
+const C = {
+  bg:      "#060A0F",
+  surface: "#0D1421",
+  card:    "#111827",
+  border:  "rgba(255,255,255,0.06)",
+  borderHi:"rgba(255,255,255,0.12)",
+  text:    "#F1F5F9",
+  textSub: "#64748B",
+  textDim: "#334155",
+  green:   "#10B981",
+  greenDk: "#059669",
+  orange:  "#F97316",
+  blue:    "#3B82F6",
+  purple:  "#8B5CF6",
+  red:     "#EF4444",
+  gold:    "#F59E0B",
+  teal:    "#14B8A6",
+  pink:    "#EC4899",
+  grad1:   "linear-gradient(135deg,#10B981,#059669)",
+  grad2:   "linear-gradient(135deg,#F97316,#EA580C)",
+  grad3:   "linear-gradient(135deg,#8B5CF6,#7C3AED)",
+  grad4:   "linear-gradient(135deg,#3B82F6,#2563EB)",
+  gradPrem:"linear-gradient(135deg,#F59E0B,#D97706)",
+};
+
+// ── SERVICES ──────────────────────────────────────────────────
+const SERVICES = [
+  { id:"medicine",  icon:"💊", label:"दवाई",      sub:"Smart Reminders",  color:C.red,    grad:"linear-gradient(135deg,#FF4E6A,#C0392B)", free:true  },
+  { id:"expense",   icon:"💸", label:"खर्च",       sub:"Daily Tracker",    color:C.orange, grad:"linear-gradient(135deg,#FF8C42,#D4650C)", free:true  },
+  { id:"schemes",   icon:"🏛", label:"Schemes",    sub:"28+ Yojana",       color:C.green,  grad:"linear-gradient(135deg,#00D09C,#00916E)", free:true  },
+  { id:"weather",   icon:"🌤", label:"मौसम",       sub:"Live Forecast",    color:C.blue,   grad:"linear-gradient(135deg,#4E9FFF,#1A6FD4)", free:true  },
+  { id:"emergency", icon:"🚨", label:"Emergency",  sub:"108 • 112 • 100",  color:C.red,    grad:"linear-gradient(135deg,#FF3B3B,#A00000)", free:true  },
+  { id:"news",      icon:"📰", label:"News",       sub:"Hindi Headlines",  color:C.blue,   grad:"linear-gradient(135deg,#5B9BFF,#1D4ED8)", free:true  },
+  { id:"family",    icon:"👨‍👩‍👧", label:"Family",  sub:"5 Members",        color:C.pink,   grad:"linear-gradient(135deg,#FF6BB5,#C2185B)", free:false },
+  { id:"finance",   icon:"🏦", label:"Finance",    sub:"EMI • Credit",     color:C.purple, grad:"linear-gradient(135deg,#A78BFF,#6D28D9)", free:false },
+  { id:"shopping",  icon:"🛒", label:"Shopping",   sub:"Best Deals",       color:C.gold,   grad:"linear-gradient(135deg,#FFD60A,#D97706)", free:false },
+  { id:"kisan",     icon:"🌾", label:"Kisan",      sub:"Mandi • Fasal",    color:C.teal,   grad:"linear-gradient(135deg,#7EE787,#16A34A)", free:false },
+  { id:"legal",     icon:"⚖", label:"Legal",      sub:"RTI • Rights",     color:"#94A3B8", grad:"linear-gradient(135deg,#94A3B8,#475569)", free:false },
+  { id:"location",  icon:"📍", label:"Near Me",    sub:"Hospital • CSC",   color:C.teal,   grad:"linear-gradient(135deg,#22D3EE,#0E7490)", free:false },
+  { id:"homework",  icon:"📚", label:"Homework",   sub:"Class 1-12",       color:C.blue,   grad:"linear-gradient(135deg,#818CF8,#4338CA)", free:false },
+  { id:"report",    icon:"📊", label:"Report",     sub:"Monthly PDF",      color:C.orange, grad:"linear-gradient(135deg,#FBBF24,#B45309)", free:false },
+  { id:"document",  icon:"📄", label:"Docs",       sub:"Aadhaar • PAN",    color:"#94A3B8", grad:"linear-gradient(135deg,#78909C,#37474F)", free:false },
+  { id:"chat",      icon:"💬", label:"AI Chat",    sub:"Baat Karo",        color:C.green,  grad:"linear-gradient(135deg,#34D399,#059669)", free:true  },
+];
+
+const MANDI = [
+  { crop:"🌾 गेहूँ",  price:"₹2,180", change:"+₹20",  up:true  },
+  { crop:"🌽 मक्का", price:"₹1,850", change:"-₹15",  up:false },
+  { crop:"🧅 प्याज़",price:"₹1,200", change:"+₹80",  up:true  },
+  { crop:"🥔 आलू",  price:"₹900",   change:"+₹30",  up:true  },
+  { crop:"🍅 टमाटर",price:"₹2,400", change:"-₹100", up:false },
+];
+
+const DEALS = [
+  { item:"Realme 12 Pro",     a:"₹24,999", f:"₹23,499", m:"₹22,800", save:"₹2,199" },
+  { item:"Pressure Cooker 5L",a:"₹1,299",  f:"₹1,199",  m:"₹999",    save:"₹300"   },
+  { item:"Bluetooth Earbuds", a:"₹4,999",  f:"₹4,499",  m:"₹4,199",  save:"₹800"   },
+];
+
+const FAMILY = [
+  { name:"दादाजी", age:72, emoji:"👴", color:C.orange, rem:["BP tablet 7:00","Sugar tablet 8:00"] },
+  { name:"माँ",    age:48, emoji:"👩", color:C.pink,   rem:["Vitamin D 1:00","Iron 9:00 PM"] },
+  { name:"Rahul",  age:16, emoji:"👦", color:C.blue,   rem:["Study reminder 6:00","Sleep 10:00"] },
+];
+
+const nowT = () => new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+
+// ── MAIN ──────────────────────────────────────────────────────
+export default function App() {
+  const [screen,  setScreen]  = useState("chat");   // chat | subscribe | success
+  const [isPrem,  setIsPrem]  = useState(false);
+  const [panel,   setPanel]   = useState(null);
+  const [msgs,    setMsgs]    = useState([
+    { id:1, type:"bot",  text:"🙏 *नमस्ते! BharatBuddy में आपका स्वागत है!*\n\nमैं आपका AI दोस्त हूँ — हर रोज़ की ज़रूरत में मदद करूँगा! 💚\n\nनीचे से service चुनें 👇", time:nowT() },
+    { id:2, type:"menu" },
+  ]);
+  const [input,   setInput]   = useState("");
+  const [loading, setLoading] = useState(false);
+  const history = useRef([]);
+  const endRef  = useRef(null);
+  const inpRef  = useRef(null);
+  const fileRef = useRef(null);
+  const recRef  = useRef(null);
+  const [recording, setRecording] = useState(false);
+
+  useEffect(() => { endRef.current?.scrollIntoView({behavior:"smooth"}); }, [msgs, loading, panel]);
+
+  const addMsg = (arr) => setMsgs(p=>[...p,...arr.map((m,i)=>({...m,id:Date.now()+i,time:nowT()}))]);
+
+  const sendAI = useCallback(async(text, imgB64=null) => {
+    if(loading) return;
+    addMsg([{type:"user",text:imgB64?"📸 "+text:text}]);
+    setInput(""); setLoading(true);
+    
+    try {
+      const r = await fetch("/api/chat",{
+        method:"POST", 
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({message:text, image:imgB64, history:history.current})
+      });
+      
+      if(!r.ok) {
+        const err = await r.json();
+        console.error("API Error:", err);
+        addMsg([{type:"bot",text:err.error || "माफ़ करें! Server error 🙏"}]);
+        setLoading(false);
+        return;
+      }
+      
+      const d = await r.json();
+      const reply = d.reply || "माफ़ करें! फिर try करें 🙏";
+      
+      // Update history from server response (includes proper format)
+      if(d.history && Array.isArray(d.history)) {
+        history.current = d.history;
+      } else {
+        // Fallback: manually update if server doesn't return history
+        history.current.push({role:"user",content:text});
+        history.current.push({role:"assistant",content:reply});
+      }
+      
+      addMsg([{type:"bot",text:reply}]);
+    } catch(e) { 
+      console.error("Network error:", e);
+      addMsg([{type:"bot",text:"Network error! Server down 🙏"}]); 
+    }
+    
+    setLoading(false); 
+    inpRef.current?.focus();
+  },[loading]);
+
+  const handleService = (svc) => {
+    const s = SERVICES.find(x=>x.id===svc);
+    if(!s) return;
+    if(!s.free && !isPrem) { setScreen("subscribe"); return; }
+    const panels = ["medicine","expense","family","finance","shopping","kisan","location","report","weather"];
+    if(panels.includes(svc)) { setPanel(svc); return; }
+    addMsg([{type:"user",text:s.label}]);
+    setTimeout(()=>sendAI(`Help me with ${s.label} in Hinglish`),200);
+  };
+
+  const toggleVoice = () => {
+    if(!recording) {
+      try {
+        const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+        if(!SR){ addMsg([{type:"bot",text:"🎤 Chrome browser use करें voice के लिए!"}]); return; }
+        const r=new SR(); r.lang="hi-IN"; r.continuous=false;
+        r.onresult=(e)=>{setInput(e.results[0][0].transcript);setRecording(false);};
+        r.onerror=()=>setRecording(false); r.onend=()=>setRecording(false);
+        recRef.current=r; r.start(); setRecording(true);
+      } catch{ addMsg([{type:"bot",text:"🎤 Voice Chrome में बेहतर!"}]); }
+    } else { recRef.current?.stop(); setRecording(false); }
+  };
+
+  const handlePhoto = (e) => {
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=(ev)=>{
+      const b64=ev.target.result.split(",")[1];
+      addMsg([{type:"photo",src:ev.target.result}]);
+      setTimeout(()=>sendAI("Analyze this image. If prescription list medicines. If bill extract amount. If document extract key info. Respond in Hindi.",b64),400);
+    };
+    reader.readAsDataURL(file); e.target.value="";
+  };
+
+  if(screen==="subscribe") return <SubscribeScreen onBack={()=>setScreen("chat")} onSuccess={()=>{setIsPrem(true);setScreen("success");}} />;
+  if(screen==="success")   return <SuccessScreen   onDone={()=>setScreen("chat")} />;
+
+  const freeSvcs = SERVICES.filter(s=>s.free).length;
+  const CHIPS = ["💊 दवाई","💸 खर्च","🌤 मौसम","🏛 Scheme","🛒 Deal","🏦 EMI","📍 Near","📋 Menu"];
+
+  return (
+    <div style={st.root}>
+      <style>{CSS}</style>
+
+      {/* STATUS BAR */}
+      <div style={st.statusBar}>
+        <span style={{fontSize:11,color:"rgba(255,255,255,0.5)"}}>9:41</span>
+        <span style={{fontSize:11,color:"rgba(255,255,255,0.5)"}}>▲▲▲ WiFi 🔋</span>
+      </div>
+
+      {/* HEADER */}
+      <div style={st.header}>
+        <div style={{display:"flex",alignItems:"center",gap:11}}>
+          <div style={st.avatarWrap}>
+            <div style={st.avatar}>🤖</div>
+            <div style={st.onlinePip}/>
+          </div>
+          <div>
+            <div style={{display:"flex",alignItems:"center",gap:7}}>
+              <span style={st.hName}>BharatBuddy</span>
+              {isPrem && <span style={st.premBadge}>⭐ PREMIUM</span>}
+            </div>
+            <div style={st.hSub}>🟢 Online • AI Powered • Hindi</div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:14,alignItems:"center"}}>
+          {!isPrem && (
+            <button onClick={()=>setScreen("subscribe")} style={st.upgradeBtn}>
+              ⭐ ₹99
+            </button>
+          )}
+          <span style={{fontSize:18,color:C.textSub,cursor:"pointer"}}>⋮</span>
+        </div>
+      </div>
+
+      {/* FREE BANNER */}
+      {!isPrem && (
+        <div onClick={()=>setScreen("subscribe")} style={st.freeBanner}>
+          <span style={{fontSize:13}}>🔒</span>
+          <span style={{fontSize:11,flex:1,color:"rgba(255,255,255,0.75)"}}>
+            {freeSvcs} free services • <b style={{color:C.gold}}>₹99/month में सब 16 unlock करें</b>
+          </span>
+          <span style={{fontSize:11,color:C.gold,fontWeight:700}}>Upgrade →</span>
+        </div>
+      )}
+
+      {/* CHAT */}
+      <div style={st.chat}>
+        <div style={st.dateChip}>{new Date().toLocaleDateString("hi-IN",{weekday:"long",day:"numeric",month:"long"})}</div>
+
+        {msgs.map(m=><Bubble key={m.id} m={m} onService={handleService} onBtn={sendAI} isPrem={isPrem}/>)}
+
+        {loading && (
+          <div style={{display:"flex",gap:8,alignItems:"flex-end",marginBottom:8}}>
+            <Av/><div style={st.typing}><D d={0}/><D d={.2}/><D d={.4}/></div>
+          </div>
+        )}
+
+        {panel==="medicine" && <MedPanel   onClose={()=>setPanel(null)} onMsg={sendAI}/>}
+        {panel==="expense"  && <ExpPanel   onClose={()=>setPanel(null)}/>}
+        {panel==="family"   && <FamPanel   onClose={()=>setPanel(null)} onMsg={sendAI}/>}
+        {panel==="finance"  && <FinPanel   onClose={()=>setPanel(null)} onMsg={sendAI}/>}
+        {panel==="shopping" && <ShopPanel  onClose={()=>setPanel(null)} onMsg={sendAI}/>}
+        {panel==="kisan"    && <KisanPanel onClose={()=>setPanel(null)} onMsg={sendAI}/>}
+        {panel==="location" && <LocPanel   onClose={()=>setPanel(null)} onMsg={sendAI}/>}
+        {panel==="report"   && <ReportPanel onClose={()=>setPanel(null)}/>}
+        {panel==="weather"  && <WeatherPanel onClose={()=>setPanel(null)} onMsg={sendAI}/>}
+
+        <div ref={endRef}/>
+      </div>
+
+      {/* QUICK CHIPS */}
+      <div style={st.chips}>
+        {CHIPS.map((c,i)=>(
+          <button key={i} onClick={()=>{
+            if(c==="📋 Menu"){addMsg([{type:"menu"}]);return;}
+            const map={"💊":"medicine","💸":"expense","🌤":"weather","🏛":"schemes","🛒":"shopping","🏦":"finance","📍":"location","📊":"report"};
+            const svc=Object.entries(map).find(([k])=>c.startsWith(k));
+            if(svc) handleService(svc[1]); else sendAI(c);
+          }} style={st.chip}>{c}</button>
+        ))}
+      </div>
+
+      {/* VOICE BAR */}
+      {recording && (
+        <div style={st.recBar}>
+          <div style={{width:9,height:9,background:C.red,borderRadius:"50%",animation:"pulse 1s infinite"}}/>
+          <span style={{fontSize:12,color:C.red,fontWeight:700,flex:1}}>🎤 Hindi में बोलें...</span>
+          <button onClick={toggleVoice} style={{background:"transparent",border:"none",color:C.red,cursor:"pointer",fontSize:12,fontWeight:700}}>✕ Stop</button>
+        </div>
+      )}
+
+      {/* INPUT */}
+      <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={handlePhoto}/>
+      <div style={st.inputRow}>
+        <button onClick={()=>fileRef.current?.click()} style={st.iconBtn}>
+          <span style={{fontSize:20}}>📎</span>
+        </button>
+        <div style={st.inputBox}>
+          <input ref={inpRef} value={input} onChange={e=>setInput(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&input.trim()&&sendAI(input)}
+            placeholder="Message करें..." style={st.inp} disabled={recording}/>
+          <button onClick={()=>fileRef.current?.click()} style={{...st.iconBtn,padding:"0 8px",color:"rgba(255,255,255,0.4)"}}>
+            <span style={{fontSize:17}}>📸</span>
+          </button>
+        </div>
+        {input.trim() ? (
+          <button onClick={()=>sendAI(input)} style={{...st.sendBtn,background:C.grad1}}>
+            <span style={{fontSize:17}}>➤</span>
+          </button>
+        ):(
+          <button onClick={toggleVoice} style={{...st.sendBtn,background:recording?C.red:C.grad1}}>
+            <span style={{fontSize:17}}>🎤</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── SUBSCRIBE SCREEN ──────────────────────────────────────────
+function SubscribeScreen({onBack, onSuccess}) {
+  const [paying, setPaying] = useState(false);
+  const [plan, setPlan] = useState("monthly");
+
+  const PERKS = [
+    {i:"👨‍👩‍👧",t:"Family Manager",s:"5 members, अलग-अलग reminders"},
+    {i:"🏦",t:"Loan & Finance",s:"EMI calculator, credit score"},
+    {i:"🛒",t:"Shopping Deals",s:"Amazon vs Flipkart vs Meesho"},
+    {i:"🌾",t:"Kisan Tools",s:"Mandi prices, fasal guide"},
+    {i:"📍",t:"Near Me",s:"Hospital, pharmacy, blood bank"},
+    {i:"📊",t:"Monthly Report",s:"PDF download, AI insights"},
+    {i:"⚖",t:"Legal Help",s:"RTI, rights, FIR guide"},
+    {i:"📚",t:"Homework Help",s:"Class 1-12 Hindi medium"},
+    {i:"📄",t:"Document Help",s:"Aadhaar, PAN, passport"},
+    {i:"🔔",t:"Smart Alerts",s:"Scheme deadlines, bill reminders"},
+  ];
+
+  const pay = () => {
+    setPaying(true);
+    setTimeout(()=>{ setPaying(false); onSuccess(); }, 2000);
+  };
+
+  return (
+    <div style={{...st.root,background:C.bg}}>
+      <style>{CSS}</style>
+
+      {/* HEADER */}
+      <div style={{background:C.surface,padding:"14px 18px",display:"flex",alignItems:"center",gap:12,borderBottom:`1px solid ${C.border}`,flexShrink:0}}>
+        <button onClick={onBack} style={{background:"transparent",border:"none",color:C.textSub,fontSize:18,cursor:"pointer"}}>←</button>
+        <div>
+          <div style={{fontSize:15,fontWeight:800,color:C.text}}>BharatBuddy Premium</div>
+          <div style={{fontSize:11,color:C.textSub}}>सब unlock करें</div>
+        </div>
+      </div>
+
+      <div style={{flex:1,overflowY:"auto",padding:"18px 16px"}}>
+
+        {/* HERO */}
+        <div style={{background:"linear-gradient(135deg,#0F1F2E,#162032)",borderRadius:22,padding:"22px 20px",marginBottom:18,border:"1px solid rgba(245,158,11,0.3)",textAlign:"center",position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",top:-30,right:-30,width:100,height:100,background:"rgba(245,158,11,0.06)",borderRadius:"50%"}}/>
+          <div style={{position:"absolute",bottom:-20,left:-20,width:80,height:80,background:"rgba(16,185,129,0.06)",borderRadius:"50%"}}/>
+          <div style={{fontSize:52,marginBottom:8}}>⭐</div>
+          <div style={{fontSize:22,fontWeight:900,color:C.text,marginBottom:4}}>Premium Membership</div>
+          <div style={{fontSize:13,color:C.textSub,lineHeight:1.6}}>16 services • AI powered • Hindi में</div>
+        </div>
+
+        {/* PLAN TOGGLE */}
+        <div style={{display:"flex",background:C.surface,borderRadius:14,padding:4,marginBottom:16,border:`1px solid ${C.border}`}}>
+          {[["monthly","₹99/month",""],["yearly","₹79/month","save 20%"]].map(([p,price,tag])=>(
+            <button key={p} onClick={()=>setPlan(p)} style={{flex:1,background:plan===p?C.gradPrem:"transparent",border:"none",borderRadius:11,padding:"10px 6px",cursor:"pointer",fontFamily:"inherit",transition:"all 0.2s"}}>
+              <div style={{fontSize:14,fontWeight:800,color:plan===p?"#000":C.textSub}}>{price}</div>
+              {tag && <div style={{fontSize:9,color:plan===p?"rgba(0,0,0,0.7)":C.textDim,fontWeight:700,marginTop:1,textTransform:"uppercase"}}>{tag}</div>}
+              <div style={{fontSize:10,color:plan===p?"rgba(0,0,0,0.6)":C.textDim,marginTop:1}}>{p==="monthly"?"Monthly":"Yearly (₹948)"}</div>
+            </button>
+          ))}
+        </div>
+
+        {/* PERKS */}
+        <div style={{fontSize:11,color:C.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:0.8,marginBottom:10}}>✨ Premium में मिलेगा</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:16}}>
+          {PERKS.map((p,i)=>(
+            <div key={i} style={{background:C.card,borderRadius:12,padding:"11px 12px",border:`1px solid ${C.border}`,display:"flex",gap:8,alignItems:"flex-start"}}>
+              <div style={{fontSize:20,flexShrink:0}}>{p.i}</div>
+              <div>
+                <div style={{fontSize:11,fontWeight:700,color:C.text}}>{p.t}</div>
+                <div style={{fontSize:9.5,color:C.textSub,lineHeight:1.4,marginTop:2}}>{p.s}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* FREE VS PREMIUM */}
+        <div style={{background:C.card,borderRadius:16,padding:16,marginBottom:16,border:`1px solid ${C.border}`}}>
+          <div style={{fontSize:11,color:C.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:0.8,marginBottom:10}}>Free vs Premium</div>
+          {[
+            ["6 services","16 services"],
+            ["Basic AI chat","Advanced AI"],
+            ["❌ Family","✅ Family"],
+            ["❌ Shopping","✅ Shopping"],
+            ["❌ Report","✅ PDF Report"],
+            ["❌ Location","✅ Near Me"],
+          ].map(([f,p],i)=>(
+            <div key={i} style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"center",marginBottom:7}}>
+              <div style={{fontSize:11,color:C.textSub,textAlign:"right"}}>{f}</div>
+              <div style={{width:1,height:16,background:C.border}}/>
+              <div style={{fontSize:11,color:C.green,fontWeight:600}}>{p}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* TESTIMONIALS */}
+        <div style={{fontSize:11,color:C.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:0.8,marginBottom:10}}>💬 Users क्या कह रहे हैं</div>
+        {[
+          {n:"Ramesh Kumar",c:"Delhi",t:"PM Kisan status घर बैठे पता चला — बहुत helpful! 🙏",r:"⭐⭐⭐⭐⭐"},
+          {n:"Priya Sharma",c:"Lucknow",t:"बच्चों की दवाई reminder आता है — एक भी miss नहीं!",r:"⭐⭐⭐⭐⭐"},
+          {n:"Suresh Patel",c:"Gujarat",t:"Mudra loan guide से ₹5 lakh loan मिला — thank you!",r:"⭐⭐⭐⭐⭐"},
+        ].map((t,i)=>(
+          <div key={i} style={{background:C.card,borderRadius:12,padding:"12px 14px",marginBottom:8,border:`1px solid ${C.border}`}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+              <div>
+                <div style={{fontSize:12,fontWeight:700,color:C.text}}>{t.n}</div>
+                <div style={{fontSize:10,color:C.textSub}}>{t.c}</div>
+              </div>
+              <div style={{fontSize:11}}>{t.r}</div>
+            </div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,0.65)",lineHeight:1.5}}>"{t.t}"</div>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      <div style={{padding:"14px 16px 20px",background:C.surface,borderTop:`1px solid ${C.border}`,flexShrink:0}}>
+        <button onClick={pay} disabled={paying} style={{width:"100%",background:paying?"rgba(255,255,255,0.05)":C.gradPrem,border:"none",borderRadius:16,padding:"16px",cursor:paying?"not-allowed":"pointer",fontFamily:"inherit",boxShadow:paying?"none":"0 8px 32px rgba(245,158,11,0.35)",transition:"all 0.3s"}}>
+          {paying ? (
+            <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+              <div style={{width:16,height:16,border:"2px solid rgba(255,255,255,0.3)",borderTop:"2px solid #fff",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+              <span style={{fontSize:14,color:"rgba(255,255,255,0.6)",fontWeight:700}}>Processing...</span>
+            </div>
+          ):(
+            <>
+              <div style={{fontSize:16,fontWeight:900,color:"#000"}}>⭐ {plan==="monthly"?"₹99/month":"₹948/year"} — Premium लें</div>
+              <div style={{fontSize:11,color:"rgba(0,0,0,0.6)",marginTop:3}}>Razorpay • UPI • Card • NetBanking</div>
+            </>
+          )}
+        </button>
+        <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.textDim}}>🔒 Secure payment • Cancel anytime • No hidden charges</div>
+      </div>
+    </div>
+  );
+}
+
+// ── SUCCESS SCREEN ─────────────────────────────────────────────
+function SuccessScreen({onDone}) {
+  const [count, setCount] = useState(3);
+  useEffect(()=>{ const t=setInterval(()=>{setCount(c=>{if(c<=1){clearInterval(t);onDone();return 0;}return c-1;});},1000); return()=>clearInterval(t); },[onDone]);
+  return (
+    <div style={{...st.root,alignItems:"center",justifyContent:"center",background:"radial-gradient(ellipse at center,#0A1F14,#060A0F)"}}>
+      <style>{CSS}</style>
+      <div style={{textAlign:"center",padding:32,animation:"scaleIn 0.5s ease"}}>
+        <div style={{fontSize:80,marginBottom:16,animation:"bounce2 0.6s ease"}}>🎉</div>
+        <div style={{fontSize:26,fontWeight:900,color:C.text,marginBottom:6}}>Welcome to Premium!</div>
+        <div style={{fontSize:14,color:C.textSub,marginBottom:20,lineHeight:1.6}}>सभी 16 services unlock हो गई!\nBharatBuddy Premium active है ✅</div>
+        <div style={{background:"rgba(16,185,129,0.1)",borderRadius:16,padding:"14px 20px",marginBottom:24,border:"1px solid rgba(16,185,129,0.2)"}}>
+          <div style={{fontSize:13,color:C.green,fontWeight:700}}>⭐ Premium Member</div>
+          <div style={{fontSize:11,color:C.textSub,marginTop:4}}>Valid: 1 Month • Auto-renew ON</div>
+        </div>
+        <button onClick={onDone} style={{background:C.grad1,border:"none",borderRadius:14,padding:"14px 40px",color:"#fff",fontSize:14,fontWeight:800,cursor:"pointer",fontFamily:"inherit"}}>
+          शुरू करें → ({count})
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── BUBBLES ───────────────────────────────────────────────────
+function Bubble({m, onService, onBtn, isPrem}) {
+  if(m.type==="menu")  return <MenuCard onSelect={onService} isPrem={isPrem}/>;
+  if(m.type==="btns")  return <BtnRow items={m.items} onBtn={onBtn}/>;
+  if(m.type==="photo") return (
+    <div style={{display:"flex",justifyContent:"flex-end",marginBottom:6}}>
+      <div style={{...st.bubble,...st.uBubble,padding:4,borderRadius:14}}>
+        <img src={m.src} style={{width:180,height:130,objectFit:"cover",borderRadius:10}} alt="scan"/>
+        <div style={{...st.bTime,paddingRight:6}}>Analyzing 🔍 ✓✓</div>
+      </div>
+    </div>
+  );
+  const isU = m.type==="user";
+  return (
+    <div style={{display:"flex",justifyContent:isU?"flex-end":"flex-start",marginBottom:4,animation:"fadeUp 0.2s ease"}}>
+      {!isU && <Av/>}
+      <div style={{...st.bubble,...(isU?st.uBubble:st.bBubble),maxWidth:"80%"}}>
+        <div style={st.bText}>{fmt(m.text)}</div>
+        <div style={st.bTime}>{m.time} {isU&&"✓✓"}</div>
+      </div>
+    </div>
+  );
+}
+
+function MenuCard({onSelect, isPrem}) {
+  return (
+    <div style={{display:"flex",gap:0,height:"100vh",background:C.bg}}>
+      <div style={{width:"20%",minWidth:100,maxWidth:180,background:"rgba(0,0,0,0.2)",borderRight:`1px solid rgba(255,255,255,0.08)`,padding:"2px 4px",overflowY:"auto",display:"flex",flexDirection:"column",gap:2}}>
+        {SERVICES.map(s=><SvcTile key={s.id} s={s} onSelect={onSelect} locked={!isPrem && !s.free} isSidebar={true} />)}
+      </div>
+      <div style={{flex:1,padding:"20px",overflowY:"auto"}}>
+        <div style={{fontSize:24,fontWeight:900,color:C.text,marginBottom:20}}>Select a Service</div>
+      </div>
+    </div>
+  );
+}
+
+function SvcTile({s, onSelect, locked=false, isSidebar=false}) {
+  const [hov, setHov] = useState(false);
+
+  if(isSidebar) {
+    return (
+      <button
+        onClick={()=>onSelect(s.id)}
+        onMouseEnter={()=>setHov(true)}
+        onMouseLeave={()=>setHov(false)}
+        style={{
+          position:"relative",
+          background: hov && !locked ? s.grad : "rgba(255,255,255,0.035)",
+          border:`1px solid ${hov && !locked ? "transparent" : "rgba(255,255,255,0.07)"}`,
+          borderRadius:12,
+          padding:"4px 2px",
+          display:"flex",
+          flexDirection:"column",
+          alignItems:"center",
+          justifyContent:"center",
+          cursor: locked ? "not-allowed" : "pointer",
+          fontFamily:"inherit",
+          transition:"all 0.22s cubic-bezier(.34,1.4,.64,1)",
+          transform: hov && !locked ? "scale(1.05)" : "none",
+          boxShadow: hov && !locked ? `0 6px 15px ${s.color}55` : "none",
+          overflow:"hidden",
+          opacity: locked ? 0.62 : 1,
+          touchAction:"manipulation",
+          width:"100%",
+          minHeight:"44px",
+        }}>
+        <div style={{
+          width:44,height:44,borderRadius:11,
+          background: hov && !locked ? "rgba(255,255,255,0.2)" : `${s.color}18`,
+          border:`1.5px solid ${hov && !locked ? "rgba(255,255,255,0.3)" : `${s.color}35`}`,
+          display:"flex",alignItems:"center",justifyContent:"center",
+          fontSize:24,marginBottom:1,
+          transition:"all 0.22s",
+        }}>{s.icon}</div>
+        <div style={{fontSize:10,fontWeight:900,color: hov && !locked ? "#fff" : "#E2E8F0",lineHeight:1.0,textAlign:"center",letterSpacing:"-0.3px"}}>{s.label}</div>
+        {!s.free && locked && <div style={{fontSize:7,color:"#FF6B6B",fontWeight:700,marginTop:2}}>LOCK</div>}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      onClick={()=>onSelect(s.id)}
+      onMouseEnter={()=>setHov(true)}
+      onMouseLeave={()=>setHov(false)}
+      onTouchStart={()=>setHov(true)}
+      onTouchEnd={()=>setHov(false)}
+      style={{
+        position:"relative",
+        background: hov && !locked ? s.grad : "rgba(255,255,255,0.035)",
+        border:`1px solid ${hov && !locked ? "transparent" : "rgba(255,255,255,0.07)"}`,
+        borderRadius:18,
+        padding:"12px 10px 11px",
+        minHeight:108,
+        textAlign:"left",
+        display:"flex",
+        flexDirection:"column",
+        alignItems:"flex-start",
+        cursor: locked ? "not-allowed" : "pointer",
+        fontFamily:"inherit",
+        transition:"all 0.22s cubic-bezier(.34,1.4,.64,1)",
+        transform: hov && !locked ? "translateY(-3px) scale(1.04)" : "none",
+        boxShadow: hov && !locked ? `0 10px 30px ${s.color}55` : "none",
+        overflow:"hidden",
+        opacity: locked ? 0.62 : 1,
+        touchAction:"manipulation",
+      }}>
+      {hov && !locked && <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(255,255,255,0.15),transparent 60%)",borderRadius:18,pointerEvents:"none"}}/>}
+
+      {!s.free && !hov && (
+        <div style={{position:"absolute",top:6,right:6,background:locked?"rgba(255,59,59,0.18)":"rgba(255,214,10,0.15)",border:`1px solid ${locked?"rgba(255,59,59,0.35)":"rgba(255,214,10,0.3)"}`,borderRadius:6,padding:"1px 5px",fontSize:8,color:locked?"#FF6B6B":"#FFD60A",fontWeight:800,lineHeight:1.6}}>{locked?"LOCK":"PRO"}</div>
+      )}
+
+      <div style={{
+        width:46,height:46,borderRadius:15,
+        background: hov && !locked ? "rgba(255,255,255,0.2)" : `${s.color}18`,
+        border:`1.5px solid ${hov && !locked ? "rgba(255,255,255,0.3)" : `${s.color}35`}`,
+        display:"flex",alignItems:"center",justifyContent:"center",
+        fontSize:23,margin:"0 0 8px",
+        boxShadow: hov && !locked ? `0 6px 20px ${s.color}88` : "none",
+        transition:"all 0.22s",
+      }}>{s.icon}</div>
+
+      <div style={{fontSize:11,fontWeight:800,color: hov && !locked ? "#fff" : "#E2E8F0",lineHeight:1.2,marginBottom:3,letterSpacing:"-0.2px"}}>{s.label}</div>
+      <div style={{fontSize:9,color: hov && !locked ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.3)",lineHeight:1.3}}>{s.sub}</div>
+    </button>
+  );
+}
+
+function BtnRow({items, onBtn}) {
+  return (
+    <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:8,paddingLeft:34,animation:"fadeUp 0.25s ease"}}>
+      {items.map((it,i)=><button key={i} onClick={()=>onBtn(it)} style={st.qBtn}>{it}</button>)}
+    </div>
+  );
+}
+
+// ── PANELS ─────────────────────────────────────────────────────
+function Pane({icon, title, sub, color, onClose, children}) {
+  return (
+    <div style={{background:C.card,borderRadius:18,marginBottom:10,overflow:"hidden",border:`1px solid ${color}30`,animation:"slideUp 0.3s ease",boxShadow:`0 8px 32px rgba(0,0,0,0.5)`}}>
+      <div style={{background:`linear-gradient(135deg,${color}20,transparent)`,padding:"12px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${color}20`}}>
+        <div style={{display:"flex",alignItems:"center",gap:9}}>
+          <div style={{width:36,height:36,background:`${color}22`,borderRadius:11,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,border:`1px solid ${color}33`}}>{icon}</div>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,color:C.text}}>{title}</div>
+            <div style={{fontSize:10,color:C.textSub}}>{sub}</div>
+          </div>
+        </div>
+        <button onClick={onClose} style={{background:"rgba(255,255,255,0.06)",border:`1px solid ${C.border}`,borderRadius:8,color:C.textSub,fontSize:11,padding:"4px 10px",cursor:"pointer"}}>✕</button>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function MedPanel({onClose,onMsg}) {
+  const [rems,setRems]=useState([
+    {name:"Metformin 500mg",time:"08:00",done:true, color:C.red},
+    {name:"Vitamin D3",     time:"13:00",done:true, color:C.orange},
+    {name:"Amlodipine 5mg", time:"21:00",done:false,color:C.purple},
+  ]);
+  const [nName,setNName]=useState(""); const [nTime,setNTime]=useState("08:00"); const [add,setAdd]=useState(false);
+  const done=rems.filter(r=>r.done).length;
+  return (
+    <Pane icon="💊" title="Medicine Manager" sub={`${done}/${rems.length} आज ली गई`} color={C.red} onClose={onClose}>
+      <div style={{padding:"10px 14px"}}>
+        <div style={{height:5,background:"rgba(255,255,255,0.06)",borderRadius:3,marginBottom:10}}>
+          <div style={{width:`${(done/rems.length)*100}%`,height:"100%",background:done===rems.length?C.green:C.red,borderRadius:3,transition:"width 0.5s"}}/>
+        </div>
+        {rems.map((r,i)=>(
+          <div key={i} onClick={()=>setRems(p=>p.map((x,j)=>j===i?{...x,done:!x.done}:x))}
+            style={{display:"flex",alignItems:"center",gap:10,background:r.done?"rgba(16,185,129,0.06)":"rgba(255,255,255,0.04)",borderRadius:12,padding:"10px 12px",marginBottom:7,cursor:"pointer",border:`1px solid ${r.done?"rgba(16,185,129,0.2)":"rgba(255,255,255,0.06)"}`,transition:"all 0.15s"}}>
+            <div style={{width:34,height:34,borderRadius:10,background:r.done?"rgba(16,185,129,0.15)":`${r.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>{r.done?"✅":"💊"}</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:12,fontWeight:600,color:r.done?"rgba(255,255,255,0.35)":C.text,textDecoration:r.done?"line-through":"none"}}>{r.name}</div>
+              <div style={{fontSize:10,color:r.done?"rgba(255,255,255,0.2)":r.color,marginTop:2}}>⏰ {r.time} • रोज़</div>
+            </div>
+            <div style={{fontSize:10,fontWeight:700,color:r.done?C.green:"rgba(255,255,255,0.2)",background:r.done?"rgba(16,185,129,0.1)":"transparent",padding:"3px 8px",borderRadius:20,border:`1px solid ${r.done?"rgba(16,185,129,0.2)":"transparent"}`}}>{r.done?"ली ✓":"बाकी"}</div>
+          </div>
+        ))}
+        {add?(
+          <div style={{background:"rgba(255,255,255,0.03)",borderRadius:12,padding:12,border:`1px solid ${C.border}`,marginBottom:8}}>
+            <input value={nName} onChange={e=>setNName(e.target.value)} placeholder="दवाई का नाम..." style={st.pInp}/>
+            <div style={{display:"flex",gap:8,marginTop:8}}>
+              <input type="time" value={nTime} onChange={e=>setNTime(e.target.value)} style={{...st.pInp,flex:1}}/>
+              <button onClick={()=>{if(nName){setRems(p=>[...p,{name:nName,time:nTime,done:false,color:C.orange}]);setNName("");setAdd(false);}}} style={st.aBtn}>Add</button>
+            </div>
+          </div>
+        ):(
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>setAdd(true)} style={{...st.aBtn,flex:1}}>+ नई दवाई</button>
+            <button onClick={()=>onMsg("Meri dawaiyon ke baare mein tips do")} style={{...st.aBtn,flex:1,background:"rgba(255,255,255,0.07)",border:`1px solid ${C.border}`}}>🤖 AI Tips</button>
+          </div>
+        )}
+      </div>
+    </Pane>
+  );
+}
+
+function ExpPanel({onClose}) {
+  const CATS=[{e:"🍛",c:C.orange},{e:"🚗",c:C.blue},{e:"💊",c:C.red},{e:"📚",c:C.purple},{e:"🏠",c:C.green},{e:"📦",c:"#94A3B8"}];
+  const [exps,setExps]=useState([{cat:"🍛",label:"किराना",amt:350,time:"आज"},{cat:"🚗",label:"Auto",amt:80,time:"आज"},{cat:"💊",label:"दवाई",amt:200,time:"कल"}]);
+  const [amt,setAmt]=useState(""); const [label,setLabel]=useState(""); const [cat,setCat]=useState("🍛");
+  const today=exps.filter(e=>e.time==="आज").reduce((s,e)=>s+e.amt,0);
+  return (
+    <Pane icon="💸" title="खर्च Tracker" sub={`आज: ₹${today}`} color={C.orange} onClose={onClose}>
+      <div style={{padding:"10px 14px"}}>
+        <div style={{display:"flex",gap:6,marginBottom:10}}>
+          {CATS.map(({e,c})=>(
+            <button key={e} onClick={()=>setCat(e)} style={{fontSize:19,width:36,height:36,borderRadius:10,background:cat===e?`${c}30`:"rgba(255,255,255,0.04)",border:cat===e?`2px solid ${c}`:`1px solid ${C.border}`,cursor:"pointer",transition:"all 0.15s"}}>{e}</button>
+          ))}
+        </div>
+        <div style={{display:"flex",gap:7,marginBottom:10}}>
+          <input value={label} onChange={e=>setLabel(e.target.value)} placeholder="क्या खर्च?" style={{...st.pInp,flex:1}}/>
+          <input value={amt} onChange={e=>setAmt(e.target.value)} type="number" placeholder="₹" style={{...st.pInp,width:75}}/>
+          <button onClick={()=>{if(amt&&label){setExps(p=>[{cat,label,amt:parseInt(amt),time:"आज"},...p]);setAmt("");setLabel("");}}} style={st.aBtn}>✓</button>
+        </div>
+        <div style={{overflowY:"auto",maxHeight:140}}>
+          {exps.map((e,i)=>{
+            const cc=CATS.find(x=>x.e===e.cat)?.c||"#888";
+            return(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:9,background:"rgba(255,255,255,0.03)",borderRadius:10,padding:"9px 11px",marginBottom:6,border:`1px solid ${C.border}`}}>
+                <div style={{width:32,height:32,borderRadius:9,background:`${cc}22`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>{e.cat}</div>
+                <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:C.text}}>{e.label}</div><div style={{fontSize:9,color:C.textSub}}>{e.time}</div></div>
+                <div style={{fontSize:13,fontWeight:700,color:cc}}>₹{e.amt}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </Pane>
+  );
+}
+
+function FamPanel({onClose,onMsg}) {
+  const [sel,setSel]=useState(null);
+  return (
+    <Pane icon="👨‍👩‍👧" title="Family Manager" sub={`${FAMILY.length} members`} color={C.pink} onClose={onClose}>
+      <div style={{padding:"10px 14px"}}>
+        {!sel ? FAMILY.map((m,i)=>(
+          <div key={i} onClick={()=>setSel(m)} style={{display:"flex",alignItems:"center",gap:10,background:"rgba(255,255,255,0.03)",borderRadius:12,padding:"11px 12px",marginBottom:7,cursor:"pointer",border:`1px solid ${m.color}25`,transition:"all 0.15s"}}
+            onMouseEnter={e=>e.currentTarget.style.background=`${m.color}12`}
+            onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.03)"}>
+            <div style={{width:40,height:40,borderRadius:12,background:`${m.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{m.emoji}</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.text}}>{m.name} <span style={{fontSize:10,color:C.textSub}}>• {m.age} साल</span></div>
+              <div style={{fontSize:10,color:m.color,marginTop:2}}>💊 {m.rem.length} reminders active</div>
+            </div>
+            <div style={{fontSize:14,color:C.textDim}}>›</div>
+          </div>
+        )) : (
+          <>
+            <button onClick={()=>setSel(null)} style={{background:"rgba(255,255,255,0.06)",border:`1px solid ${C.border}`,borderRadius:8,color:C.textSub,fontSize:11,padding:"4px 10px",cursor:"pointer",marginBottom:10}}>← Back</button>
+            <div style={{background:`${sel.color}15`,borderRadius:14,padding:"12px 14px",marginBottom:10,border:`1px solid ${sel.color}25`,display:"flex",alignItems:"center",gap:10}}>
+              <span style={{fontSize:36}}>{sel.emoji}</span>
+              <div><div style={{fontSize:16,fontWeight:800,color:C.text}}>{sel.name}</div><div style={{fontSize:11,color:C.textSub}}>{sel.age} साल</div></div>
+            </div>
+            {sel.rem.map((r,i)=>(
+              <div key={i} style={{display:"flex",gap:8,alignItems:"center",background:"rgba(255,255,255,0.03)",borderRadius:10,padding:"9px 12px",marginBottom:6,border:`1px solid ${C.border}`}}>
+                <span style={{fontSize:14}}>⏰</span><span style={{fontSize:12,color:C.text,flex:1}}>{r}</span><span style={{fontSize:10,color:C.green,fontWeight:700}}>Active ✓</span>
+              </div>
+            ))}
+            <button onClick={()=>onMsg(`${sel.name} ke liye health tips batao, age ${sel.age} saal`)} style={{...st.aBtn,width:"100%",marginTop:6}}>🤖 AI Health Tips</button>
+          </>
+        )}
+        {!sel && <button style={{...st.aBtn,width:"100%",background:"rgba(255,255,255,0.05)",border:`1px solid ${C.border}`,color:C.textSub}}>+ Member जोड़ें</button>}
+      </div>
+    </Pane>
+  );
+}
+
+function FinPanel({onClose,onMsg}) {
+  const [L,setL]=useState(""); const [R,setR]=useState(""); const [M,setM]=useState(""); const [emi,setEmi]=useState(null);
+  const calc=()=>{const P=+L,r=+R/12/100,n=+M;if(!P||!r||!n)return;const e=P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);setEmi({m:Math.round(e),t:Math.round(e*n),i:Math.round(e*n-P)});};
+  return (
+    <Pane icon="🏦" title="Loan & Finance" sub="EMI Calculator • Loan Compare" color={C.blue} onClose={onClose}>
+      <div style={{padding:"10px 14px"}}>
+        {[["Loan Amount ₹",L,setL,"₹ e.g. 500000"],["Interest Rate %",R,setR,"e.g. 8.5"],["Tenure (Months)",M,setM,"e.g. 60"]].map(([l,v,s,p],i)=>(
+          <div key={i} style={{marginBottom:8}}>
+            <div style={{fontSize:10,color:C.textSub,fontWeight:600,marginBottom:4}}>{l}</div>
+            <input value={v} onChange={e=>s(e.target.value)} type="number" placeholder={p} style={{...st.pInp,width:"100%"}}/>
+          </div>
+        ))}
+        <button onClick={calc} style={{...st.aBtn,width:"100%",background:C.grad4,marginBottom:10}}>Calculate EMI 🧮</button>
+        {emi && (
+          <div style={{background:"rgba(59,130,246,0.1)",borderRadius:14,padding:"14px",border:"1px solid rgba(59,130,246,0.25)"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,textAlign:"center"}}>
+              {[["Monthly",`₹${emi.m.toLocaleString()}`,true,C.blue],["Total",`₹${emi.t.toLocaleString()}`,false,C.orange],["Interest",`₹${emi.i.toLocaleString()}`,false,C.red]].map(([l,v,big,c],i)=>(
+                <div key={i}><div style={{fontSize:big?20:13,fontWeight:900,color:c}}>{v}</div><div style={{fontSize:9,color:C.textSub,marginTop:2}}>{l}</div></div>
+              ))}
+            </div>
+            <button onClick={()=>onMsg(`Loan ₹${L} ke baare mein financial advice do`)} style={{...st.aBtn,width:"100%",marginTop:10,fontSize:11}}>🤖 AI Advice</button>
+          </div>
+        )}
+      </div>
+    </Pane>
+  );
+}
+
+function ShopPanel({onClose,onMsg}) {
+  const [q,setQ]=useState(""); const [res,setRes]=useState(null); const [loading,setLoading]=useState(false);
+  const search=()=>{
+    if(!q.trim())return; setLoading(true);
+    const found=DEALS.find(d=>d.item.toLowerCase().includes(q.toLowerCase()));
+    setTimeout(()=>{setRes(found||"none");setLoading(false);},700);
+  };
+  return (
+    <Pane icon="🛒" title="Shopping Assistant" sub="Amazon vs Flipkart vs Meesho" color={C.purple} onClose={onClose}>
+      <div style={{padding:"10px 14px"}}>
+        <div style={{display:"flex",gap:7,marginBottom:10}}>
+          <input value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>e.key==="Enter"&&search()} placeholder="Product search करें..." style={{...st.pInp,flex:1}}/>
+          <button onClick={search} style={{...st.aBtn,background:C.grad3}}>{loading?"⏳":"🔍"}</button>
+        </div>
+        {res && res!=="none" && (
+          <div style={{background:"rgba(139,92,246,0.08)",borderRadius:14,padding:"12px",marginBottom:10,border:"1px solid rgba(139,92,246,0.2)",animation:"fadeUp 0.3s ease"}}>
+            <div style={{fontSize:13,fontWeight:700,color:C.text,marginBottom:8}}>{res.item}</div>
+            {[["🛒 Amazon",res.a,"#FF9900"],["🛍 Flipkart",res.f,"#2874F0"],["👗 Meesho",res.m,C.purple]].map(([s,p,c],i)=>{
+              const isBest=i===2;
+              return(
+                <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:isBest?"rgba(16,185,129,0.08)":"rgba(255,255,255,0.03)",borderRadius:9,padding:"8px 11px",marginBottom:5,border:isBest?"1px solid rgba(16,185,129,0.25)":`1px solid ${C.border}`}}>
+                  <span style={{fontSize:11,color:isBest?C.text:"rgba(255,255,255,0.6)"}}>{s}</span>
+                  <div style={{display:"flex",alignItems:"center",gap:7}}>
+                    <span style={{fontSize:13,fontWeight:800,color:c}}>{p}</span>
+                    {isBest&&<span style={{fontSize:9,background:"rgba(16,185,129,0.2)",color:C.green,padding:"2px 7px",borderRadius:10,fontWeight:800}}>BEST ✓</span>}
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{background:"rgba(16,185,129,0.08)",borderRadius:9,padding:"9px 12px",marginTop:6,border:"1px solid rgba(16,185,129,0.2)"}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.green}}>💰 Meesho पर खरीदें → {res.save} बचेंगे!</div>
+            </div>
+          </div>
+        )}
+        {res==="none" && <div style={{textAlign:"center",padding:"10px 0"}}><div style={{fontSize:12,color:C.textSub}}>Product नहीं मिला 😔</div><button onClick={()=>onMsg(`${q} ke liye best deal kahan milegi?`)} style={{...st.aBtn,marginTop:8,fontSize:11}}>🤖 AI से पूछें</button></div>}
+        <div style={{display:"flex",flexWrap:"wrap",gap:5,marginTop:4}}>
+          {["Realme 12 Pro","Pressure Cooker","Earbuds"].map((p,i)=><button key={i} onClick={()=>setQ(p)} style={st.qBtn}>{p}</button>)}
+        </div>
+      </div>
+    </Pane>
+  );
+}
+
+function KisanPanel({onClose,onMsg}) {
+  return (
+    <Pane icon="🌾" title="Kisan Help" sub="Mandi Prices • Fasal • Yojana" color={C.teal} onClose={onClose}>
+      <div style={{padding:"10px 14px"}}>
+        <div style={{fontSize:10,color:C.textSub,fontWeight:700,textTransform:"uppercase",letterSpacing:0.7,marginBottom:8}}>📊 आज की Mandi Rates</div>
+        {MANDI.map((m,i)=>(
+          <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,255,255,0.03)",borderRadius:10,padding:"10px 12px",marginBottom:6,border:`1px solid ${C.teal}22`}}>
+            <span style={{fontSize:12,fontWeight:600,color:C.text}}>{m.crop}</span>
+            <div style={{textAlign:"right"}}><div style={{fontSize:13,fontWeight:800,color:C.teal}}>{m.price}/क्विंटल</div><div style={{fontSize:10,color:m.up?C.green:C.red}}>{m.change} {m.up?"↑":"↓"}</div></div>
+          </div>
+        ))}
+        <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:6}}>
+          {["🌧 खेत मौसम","🐛 फसल बीमारी","💊 खाद Guide","🏛 Kisan Schemes"].map((b,i)=><button key={i} onClick={()=>{onClose();onMsg(b);}} style={st.qBtn}>{b}</button>)}
+        </div>
+      </div>
+    </Pane>
+  );
+}
+
+function LocPanel({onClose,onMsg}) {
+  const [loc,setLoc]=useState(false); const [cat,setCat]=useState("hospitals");
+  const NEAR={hospitals:["🏥 AIIMS Delhi — 2.3 km","🏥 Safdarjung — 3.1 km","🏥 RML Hospital — 4.2 km"],pharmacies:["💊 Apollo Pharmacy — 0.4 km","💊 MedPlus — 0.8 km","💊 Jan Aushadhi — 1.2 km"],blood:["🩸 Blood Bank AIIMS — 2.3 km","🩸 Red Cross — 3.5 km"]};
+  return (
+    <Pane icon="📍" title="Near Me" sub="Nearby hospitals, pharmacy, CSC" color={C.teal} onClose={onClose}>
+      {!loc ? (
+        <div style={{padding:"16px 14px",textAlign:"center"}}>
+          <div style={{fontSize:44,marginBottom:10}}>📍</div>
+          <div style={{fontSize:13,color:C.textSub,marginBottom:14}}>GPS से nearby services ढूंढें</div>
+          <button onClick={()=>setLoc(true)} style={{...st.aBtn,background:"linear-gradient(135deg,#06B6D4,#0891B2)"}}>📍 Location Allow करें</button>
+        </div>
+      ):(
+        <div style={{padding:"8px 14px 12px"}}>
+          <div style={{fontSize:10,color:C.green,background:"rgba(16,185,129,0.08)",borderRadius:8,padding:"5px 10px",marginBottom:10,border:"1px solid rgba(16,185,129,0.2)"}}>📍 New Delhi • Updated just now ✓</div>
+          <div style={{display:"flex",gap:1,background:"rgba(0,0,0,0.3)",borderRadius:8,overflow:"hidden",marginBottom:10}}>
+            {[["hospitals","🏥"],["pharmacies","💊"],["blood","🩸"]].map(([c,e])=>(
+              <button key={c} onClick={()=>setCat(c)} style={{flex:1,background:cat===c?"rgba(6,182,212,0.25)":"transparent",border:"none",color:cat===c?"#22D3EE":C.textSub,padding:"7px 4px",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>{e} {c==="hospitals"?"Hospital":c==="pharmacies"?"Pharmacy":"Blood"}</button>
+            ))}
+          </div>
+          {NEAR[cat].map((item,i)=>(
+            <div key={i} onClick={()=>onMsg(item)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"rgba(255,255,255,0.03)",borderRadius:10,padding:"10px 12px",marginBottom:6,cursor:"pointer",border:`1px solid ${C.border}`}}>
+              <span style={{fontSize:12,color:C.text}}>{item}</span><span style={{fontSize:13,color:C.teal}}>→</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Pane>
+  );
+}
+
+function ReportPanel({onClose}) {
+  const DATA=[{cat:"🍛 खाना",amt:3200,max:4000,c:C.orange},{cat:"🚗 यातायात",amt:1800,max:2000,c:C.blue},{cat:"💊 दवाई",amt:800,max:1000,c:C.red},{cat:"📚 पढ़ाई",amt:500,max:1000,c:C.purple},{cat:"🏠 घर",amt:5000,max:5000,c:C.green}];
+  return (
+    <Pane icon="📊" title="Monthly Report" sub="March 2026" color={C.gold} onClose={onClose}>
+      <div style={{padding:"10px 14px"}}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:7,marginBottom:12}}>
+          {[["₹11,300","Total खर्च",C.orange],["87%","Medicine",C.green],["₹4,000","Schemes",C.teal]].map(([v,l,c],i)=>(
+            <div key={i} style={{background:`${c}12`,borderRadius:12,padding:"10px 8px",textAlign:"center",border:`1px solid ${c}22`}}>
+              <div style={{fontSize:15,fontWeight:900,color:c}}>{v}</div>
+              <div style={{fontSize:9,color:C.textSub,marginTop:2}}>{l}</div>
+            </div>
+          ))}
+        </div>
+        {DATA.map((d,i)=>(
+          <div key={i} style={{marginBottom:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+              <span style={{fontSize:11,color:"rgba(255,255,255,0.75)"}}>{d.cat}</span>
+              <span style={{fontSize:11,fontWeight:700,color:d.c}}>₹{d.amt.toLocaleString()}</span>
+            </div>
+            <div style={{height:5,background:"rgba(255,255,255,0.05)",borderRadius:3}}>
+              <div style={{width:`${(d.amt/d.max)*100}%`,height:"100%",background:d.c,borderRadius:3,transition:"width 0.8s"}}/>
+            </div>
+          </div>
+        ))}
+        <button onClick={()=>alert("📊 PDF feature real app में available!")} style={{...st.aBtn,width:"100%",background:C.gradPrem,marginTop:8,color:"#000"}}>📥 PDF Download करें</button>
+      </div>
+    </Pane>
+  );
+}
+
+function WeatherPanel({onClose,onMsg}) {
+  const W=[{name:"Delhi",t:32,i:"☀️",h:65,desc:"गर्म",warn:"⚠️ तेज़ धूप — पानी पिएं"},{name:"Mumbai",t:28,i:"🌤",h:80,desc:"उमस",warn:"🌧 शाम बारिश"},{name:"Lucknow",t:35,i:"🌡",h:55,desc:"बहुत गर्म",warn:"⚠️ लू का खतरा"}];
+  const [ci,setCi]=useState(0); const w=W[ci];
+  return (
+    <Pane icon="🌤" title="मौसम" sub="आज का हाल" color={C.blue} onClose={onClose}>
+      <div style={{padding:"10px 14px"}}>
+        <div style={{display:"flex",gap:6,marginBottom:10}}>
+          {W.map((c,i)=><button key={i} onClick={()=>setCi(i)} style={{...st.qBtn,background:ci===i?"rgba(59,130,246,0.25)":"rgba(255,255,255,0.04)",borderColor:ci===i?"rgba(59,130,246,0.4)":C.border,color:ci===i?"#60A5FA":C.textSub}}>{c.name}</button>)}
+        </div>
+        <div style={{background:"linear-gradient(135deg,rgba(59,130,246,0.12),rgba(37,99,235,0.05))",borderRadius:16,padding:"16px",textAlign:"center",marginBottom:10,border:"1px solid rgba(59,130,246,0.2)"}}>
+          <div style={{fontSize:52}}>{w.i}</div>
+          <div style={{fontSize:36,fontWeight:900,color:C.text}}>{w.t}°C</div>
+          <div style={{fontSize:12,color:C.textSub,marginTop:4}}>{w.desc} • 💧{w.h}%</div>
+          {w.warn&&<div style={{background:"rgba(245,158,11,0.1)",borderRadius:9,padding:"7px 12px",marginTop:10,fontSize:11,color:C.gold,border:"1px solid rgba(245,158,11,0.2)"}}>{w.warn}</div>}
+        </div>
+        <button onClick={()=>onMsg(`${w.name} mein aaj ${w.t} degree hai — health tips batao`)} style={{...st.aBtn,width:"100%",fontSize:11}}>🤖 Health Tips</button>
+      </div>
+    </Pane>
+  );
+}
+
+// ── HELPERS ────────────────────────────────────────────────────
+const Av = () => <div style={{width:26,height:26,background:C.grad1,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,flexShrink:0,alignSelf:"flex-end",marginRight:5,marginBottom:4}}>🤖</div>;
+const D  = ({d}) => <div style={{width:6,height:6,background:C.textSub,borderRadius:"50%",animation:`bounce 1.2s ${d}s ease-in-out infinite`}}/>;
+
+function fmt(text) {
+  if(!text) return null;
+  return text.split("\n").map((line,i)=>(
+    <div key={i} dangerouslySetInnerHTML={{__html:line.replace(/\*(.*?)\*/g,"<b>$1</b>")||"&nbsp;"}} style={{lineHeight:1.55}}/>
+  ));
+}
+
+// ── STYLES ────────────────────────────────────────────────────
+const st = {
+  root:       {display:"flex",flexDirection:"column",height:"100vh",background:C.bg,fontFamily:"'Plus Jakarta Sans','Noto Sans Devanagari',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",color:C.text,overflow:"hidden"},
+  statusBar:  {background:"rgba(0,0,0,0.3)",padding:"4px 18px",display:"flex",justifyContent:"space-between",flexShrink:0},
+  header:     {background:C.surface,padding:"10px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${C.border}`,flexShrink:0,backdropFilter:"blur(20px)"},
+  avatarWrap: {position:"relative",flexShrink:0},
+  avatar:     {width:42,height:42,background:C.grad1,borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20},
+  onlinePip:  {position:"absolute",bottom:0,right:0,width:11,height:11,background:C.green,borderRadius:"50%",border:`2px solid ${C.surface}`},
+  hName:      {fontWeight:900,fontSize:16,color:C.text,letterSpacing:"-0.5px"},
+  hSub:       {fontSize:10,color:C.textSub,marginTop:2,fontWeight:500,letterSpacing:"0.1px"},
+  premBadge:  {background:"rgba(245,158,11,0.15)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:20,padding:"2px 8px",fontSize:9,color:C.gold,fontWeight:900,letterSpacing:"0.3px"},
+  upgradeBtn: {background:C.gradPrem,border:"none",borderRadius:10,padding:"7px 13px",color:"#000",fontSize:11,fontWeight:900,cursor:"pointer",fontFamily:"inherit",letterSpacing:"0.4px"},
+  freeBanner: {background:"rgba(245,158,11,0.06)",borderBottom:"1px solid rgba(245,158,11,0.15)",padding:"7px 16px",display:"flex",alignItems:"center",gap:8,cursor:"pointer",flexShrink:0},
+  chat:       {flex:1,overflowY:"auto",padding:"10px 12px 6px",background:"#080E17",display:"flex",flexDirection:"column",gap:0},
+  dateChip:   {textAlign:"center",fontSize:10,color:C.textSub,background:"rgba(255,255,255,0.05)",borderRadius:10,padding:"4px 14px",display:"inline-block",margin:"0 auto 12px",fontWeight:600,letterSpacing:"0.3px"},
+  bubble:     {padding:"9px 12px 6px",borderRadius:10,wordBreak:"break-word"},
+  bBubble:    {background:C.card,borderTopLeftRadius:3,marginLeft:3,border:`1px solid ${C.border}`},
+  uBubble:    {background:"linear-gradient(135deg,#0A4035,#063D2F)",borderTopRightRadius:3,border:"1px solid rgba(16,185,129,0.15)"},
+  bText:      {fontSize:13.5,lineHeight:1.6,color:C.text,fontWeight:500},
+  bTime:      {fontSize:10,color:C.textDim,textAlign:"right",marginTop:4,fontWeight:500},
+  typing:     {background:C.card,borderRadius:"10px 10px 10px 3px",padding:"12px 14px",display:"flex",gap:5,alignItems:"center",border:`1px solid ${C.border}`},
+  chips:      {padding:"7px 10px",background:C.bg,display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none",flexShrink:0,borderTop:`1px solid ${C.border}`},
+  chip:       {background:"rgba(255,255,255,0.04)",border:`1px solid ${C.border}`,borderRadius:20,padding:"6px 13px",color:"rgba(255,255,255,0.7)",fontSize:11,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",flexShrink:0,transition:"all 0.15s"},
+  recBar:     {background:"rgba(239,68,68,0.08)",padding:"7px 16px",display:"flex",alignItems:"center",gap:8,borderTop:"1px solid rgba(239,68,68,0.2)",flexShrink:0},
+  inputRow:   {padding:"8px 12px 12px",background:C.surface,display:"flex",alignItems:"center",gap:7,borderTop:`1px solid ${C.border}`,flexShrink:0},
+  inputBox:   {flex:1,background:"rgba(255,255,255,0.05)",borderRadius:24,border:`1px solid ${C.borderHi}`,display:"flex",alignItems:"center",overflow:"hidden"},
+  inp:        {flex:1,background:"transparent",border:"none",outline:"none",color:C.text,fontSize:13,padding:"11px 14px",fontFamily:"inherit"},
+  iconBtn:    {background:"transparent",border:"none",cursor:"pointer",color:C.textSub,padding:"6px",flexShrink:0},
+  sendBtn:    {width:42,height:42,borderRadius:"50%",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",flexShrink:0,transition:"all 0.2s"},
+  qBtn:       {background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.2)",borderRadius:20,padding:"6px 13px",color:"rgba(16,185,129,0.9)",fontSize:11.5,cursor:"pointer",whiteSpace:"nowrap",fontFamily:"inherit",transition:"all 0.15s"},
+  pInp:       {background:"rgba(255,255,255,0.05)",border:`1px solid ${C.borderHi}`,borderRadius:10,padding:"10px 13px",color:C.text,fontSize:13,outline:"none",fontFamily:"inherit",width:"100%",boxSizing:"border-box"},
+  aBtn:       {background:C.grad1,border:"none",borderRadius:10,padding:"10px 16px",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit",whiteSpace:"nowrap",transition:"opacity 0.15s"},
+};
+
+const mc = {
+  wrap:       {background:"#0C1524",borderRadius:24,marginBottom:12,overflow:"hidden",border:"1px solid rgba(255,255,255,0.1)",animation:"slideUp 0.35s cubic-bezier(.34,1.4,.64,1)",boxShadow:"0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.06)"},
+  brand:      {background:"linear-gradient(135deg,#0F2039,#091527)",padding:"16px 18px",display:"flex",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,0.06)",position:"relative",overflow:"hidden"},
+  brandGlow:  {position:"absolute",top:-60,left:-40,width:200,height:200,borderRadius:"50%",background:"rgba(255,140,66,0.07)",filter:"blur(50px)",pointerEvents:"none"},
+  brandLeft:  {display:"flex",alignItems:"center",gap:12,flex:1},
+  brandIcon:  {width:46,height:46,background:"linear-gradient(135deg,#FF8C42,#D4650C)",borderRadius:14,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,boxShadow:"0 6px 20px rgba(255,140,66,0.4)",flexShrink:0},
+  brandName:  {fontSize:17,fontWeight:900,color:"#F1F5F9",letterSpacing:"-0.4px"},
+  brandSub:   {fontSize:10,color:"rgba(255,255,255,0.35)",marginTop:2},
+  brandRight: {display:"flex",alignItems:"center",gap:14},
+  brandStat:  {display:"flex",flexDirection:"column",alignItems:"center",gap:1},
+  section:    {padding:"12px 14px 8px"},
+  sectionHdr: {display:"flex",alignItems:"center",gap:7,marginBottom:10},
+  sectionPip: {width:7,height:7,borderRadius:"50%",flexShrink:0},
+  sectionTitle:{fontSize:11,fontWeight:800,color:"rgba(255,255,255,0.5)",textTransform:"uppercase",letterSpacing:"0.8px"},
+  freeChip:   {marginLeft:"auto",background:"rgba(0,208,156,0.12)",border:"1px solid rgba(0,208,156,0.25)",borderRadius:20,padding:"2px 10px",fontSize:9.5,color:"#00D09C",fontWeight:700},
+  proChip:    {marginLeft:"auto",background:"rgba(255,214,10,0.12)",border:"1px solid rgba(255,214,10,0.25)",borderRadius:20,padding:"2px 10px",fontSize:9.5,color:"#FFD60A",fontWeight:700},
+  grid:       {display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:7},
+  divider:    {display:"flex",alignItems:"center",gap:12,padding:"4px 16px 0"},
+  divLine:    {flex:1,height:1,background:"rgba(255,255,255,0.05)"},
+  divBadge:   {background:"linear-gradient(135deg,rgba(255,214,10,0.15),rgba(255,140,66,0.1))",border:"1px solid rgba(255,214,10,0.25)",borderRadius:20,padding:"4px 14px",fontSize:9.5,color:"#FFD60A",fontWeight:800,letterSpacing:"1.2px",display:"flex",alignItems:"center",gap:5,whiteSpace:"nowrap"},
+  foot:       {background:"rgba(0,0,0,0.25)",padding:"10px 16px",borderTop:"1px solid rgba(255,255,255,0.04)",marginTop:4},
+  footInner:  {display:"flex",justifyContent:"center",flexWrap:"wrap",gap:"6px 14px"},
+  footItem:   {fontSize:9.5,color:"rgba(255,255,255,0.25)",fontWeight:600},
+};
+
+const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Noto+Sans+Devanagari:wght@400;600;700;800;900&display=swap');
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
+  body,html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}
+  ::-webkit-scrollbar{width:2px;height:2px;}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);borderRadius:2px;}
+  input::placeholder{color:rgba(255,255,255,0.2);}
+  input[type="time"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:0.3;}
+  input[type="number"]::-webkit-inner-spin-button{opacity:0.2;}
+  b,strong{font-weight:800;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes scaleIn{from{opacity:0;transform:scale(0.8)}to{opacity:1;transform:scale(1)}}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:0.3}30%{transform:translateY(-5px);opacity:1}}
+  @keyframes bounce2{0%{transform:scale(0.5)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+`;

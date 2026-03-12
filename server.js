@@ -99,42 +99,46 @@ app.post("/api/chat", async (req, res) => {
     });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey || apiKey === "your_api_key_here") {
-    console.error("⚠️ ANTHROPIC_API_KEY not configured");
+    console.error("⚠️ OPENAI_API_KEY not configured");
     return res.status(500).json({
-      reply: "⚠️ API key set नहीं है! .env file में ANTHROPIC_API_KEY डालें। 🙏",
+      reply: "⚠️ API key set नहीं है! .env file में OPENAI_API_KEY डालें। 🙏",
     });
   }
 
   try {
     console.log(`💬 Chat request - Messages: ${conversationMessages.length}, Has image: ${!!image}`);
     
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    // Prepend system prompt as first message for OpenAI format
+    const messagesWithSystem = [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...conversationMessages
+    ];
+    
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
+        "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "gpt-4o-mini",
         max_tokens: 1000,
-        system: SYSTEM_PROMPT,
-        messages: conversationMessages,
+        messages: messagesWithSystem,
       }),
     });
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      console.error("❌ Anthropic API error:", response.status, errData);
+      console.error("❌ OpenAI API error:", response.status, errData);
       return res.status(response.status).json({
         reply: "माफ़ करें, API से कुछ गड़बड़ हो गई। थोड़ी देर बाद try करें! 🙏",
       });
     }
 
     const data = await response.json();
-    const reply = data.content?.[0]?.text || "माफ़ करें, कुछ गड़बड़ हो गई। 🙏";
+    const reply = data.choices?.[0]?.message?.content || "माफ़ करें, कुछ गड़बड़ हो गई। 🙏";
 
     console.log(`✅ Chat reply sent - Length: ${reply.length} chars`);
     res.json({ reply });
@@ -153,33 +157,34 @@ app.post("/api/chat", async (req, res) => {
 // Store conversation history per phone number (in-memory, resets on restart)
 const whatsappConversations = new Map();
 
-// Helper: Get AI reply from Claude
+// Helper: Get AI reply from OpenAI
 async function getClaudeReply(messages) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return "⚠️ API key not configured";
 
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
+      "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: "gpt-4o-mini",
       max_tokens: 1000,
-      system: SYSTEM_PROMPT,
-      messages,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        ...messages
+      ],
     }),
   });
 
   if (!response.ok) {
-    console.error("Claude API error:", response.status);
+    console.error("OpenAI API error:", response.status);
     return "माफ़ करें, कुछ गड़बड़ हो गई। थोड़ी देर बाद फिर message करें! 🙏";
   }
 
   const data = await response.json();
-  return data.content?.[0]?.text || "माफ़ करें, कुछ गड़बड़ हो गई। 🙏";
+  return data.choices?.[0]?.message?.content || "माफ़ करें, कुछ गड़बड़ हो गई। 🙏";
 }
 
 // Helper: Send reply back via AiSensy
