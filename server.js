@@ -37,6 +37,18 @@ function detectSpecificScheme(text = "") {
   return null;
 }
 
+function isNewsIntent(text = "") {
+  const t = String(text).toLowerCase();
+  return ["news", "समाचार", "खबर", "ख़बर", "headlines", "today news", "aaj ki khabar", "आज की खबर"].some((k) => t.includes(k));
+}
+
+function fallbackNewsReply(lang = "hi") {
+  if (lang === "en") {
+    return "I can help with Hindi news-style summaries by topic, but I do not have guaranteed live web access for real-time headlines. Please share your topic (government schemes, farming, health, jobs, or local news), and I will give a short update in simple points.";
+  }
+  return "मैं हिंदी में समाचार-सार दे सकता हूँ। मेरे पास हर समय लाइव हेडलाइन्स की गारंटी नहीं होती, लेकिन मैं विषय के अनुसार ताज़ा-जैसा अपडेट दे सकता हूँ।\nकृपया विषय बताइए: *सरकारी योजना*, *किसान*, *स्वास्थ्य*, *रोज़गार*, या *स्थानीय खबर*।";
+}
+
 function fallbackSchemeReply(scheme, lang = "hi") {
   if (lang === "en") {
     if (scheme === "pm_kisan") {
@@ -152,18 +164,22 @@ app.post("/api/chat", async (req, res) => {
 
     const latestUserText = String(message || conversationMessages[conversationMessages.length - 1]?.content || "");
     const specificScheme = detectSpecificScheme(latestUserText);
+    const newsIntent = isNewsIntent(latestUserText);
 
     const userLang = (language || lang || "hi").toLowerCase();
     const languageInstruction = userLang === "en"
       ? "Reply in clear, simple English. Do not switch to Hindi unless user asks."
-      : "Reply in warm Hinglish (Hindi + English mix).";
+      : "Reply in natural Hindi/Hinglish with mostly Devanagari words. Avoid pure English phrasing.";
 
     const behaviorInstruction =
       "If user asks about a specific scheme (like PM Kisan/Ayushman), give direct actionable details first (eligibility, documents, apply steps), then ask only one short follow-up. Avoid repeating generic opener lines.";
     const specificSchemeInstruction = specificScheme
       ? `User explicitly asked about ${specificScheme}. Do NOT ask 'which scheme'. Give direct details now.`
       : "If user did not specify a scheme, then ask one short clarifying question.";
-    const dynamicSystemPrompt = `${SYSTEM_PROMPT}\n\nLANGUAGE MODE:\n- ${languageInstruction}\n\nANTI-REPETITION RULE:\n- ${behaviorInstruction}\n- ${specificSchemeInstruction}`;
+    const newsInstruction = newsIntent
+      ? "User asked for news. Reply in Hindi style and provide concise topic-wise update. Do not respond with a generic refusal. If live accuracy is uncertain, state it briefly and continue with helpful structured summary."
+      : "";
+    const dynamicSystemPrompt = `${SYSTEM_PROMPT}\n\nLANGUAGE MODE:\n- ${languageInstruction}\n\nANTI-REPETITION RULE:\n- ${behaviorInstruction}\n- ${specificSchemeInstruction}${newsInstruction ? `\n\nNEWS RULE:\n- ${newsInstruction}` : ""}`;
     
     // Prepend system prompt as first message for OpenAI format
     const messagesWithSystem = [
@@ -198,6 +214,11 @@ app.post("/api/chat", async (req, res) => {
     // Hard guard: if a specific scheme was asked, never return generic "which scheme" style response.
     if (specificScheme && /kaunsi scheme|which scheme|pm kisan, pm awas|ayushman bharat,? ya/i.test(reply.toLowerCase())) {
       reply = fallbackSchemeReply(specificScheme, userLang);
+    }
+
+    // Hard guard: avoid generic refusal loops for news queries.
+    if (newsIntent && /current news provide nahi kar sakta|can'?t provide current news|live news provide/i.test(reply.toLowerCase())) {
+      reply = fallbackNewsReply(userLang);
     }
 
     console.log(`✅ Chat reply sent - Length: ${reply.length} chars`);
