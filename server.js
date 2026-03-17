@@ -53,6 +53,16 @@ function devanagariWordCoverage(text = "") {
   return devWords.length / words.length;
 }
 
+function normalizeHindiStyle(text = "") {
+  return String(text)
+    .replace(/\bBilkul!?/gi, "बिल्कुल!")
+    .replace(/\bAapko\b/gi, "आपको")
+    .replace(/\bkaunsi yojana ki jaankari chahiye\??/gi, "कृपया बताइए, आपको किस योजना की जानकारी चाहिए?")
+    .replace(/\bThoda specific batao, taaki main madad kar sakun\b/gi, "कृपया योजना का नाम स्पष्ट बताइए, ताकि मैं सही मदद कर सकूं।")
+    .replace(/\bspecific\b/gi, "स्पष्ट")
+    .replace(/\bword\b/gi, "शब्द");
+}
+
 function hasHindiIntent(text = "") {
   const t = String(text).toLowerCase();
   if (hasDevanagari(t)) return true;
@@ -78,7 +88,7 @@ function hasHindiIntent(text = "") {
 
 async function rewriteToHindiIfNeeded(reply, userLang, apiKey) {
   if (userLang === "en") return reply;
-  if (devanagariWordCoverage(reply) >= 0.35) return reply;
+  if (devanagariWordCoverage(reply) >= 0.7) return normalizeHindiStyle(reply);
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -94,7 +104,7 @@ async function rewriteToHindiIfNeeded(reply, userLang, apiKey) {
           {
             role: "system",
             content:
-              "Rewrite this response in simple Hindi/Hinglish using mostly Devanagari script. Keep meaning same, keep it concise, and preserve emojis/formatting. Avoid English sentences except unavoidable names.",
+              "Rewrite this response in simple Hindi using Devanagari script as much as possible. Keep meaning same, keep it concise, and preserve emojis/formatting. Avoid Roman Hindi/English except unavoidable scheme names.",
           },
           { role: "user", content: String(reply || "") },
         ],
@@ -103,11 +113,11 @@ async function rewriteToHindiIfNeeded(reply, userLang, apiKey) {
 
     if (!response.ok) return reply;
     const data = await response.json();
-    const rewritten = data.choices?.[0]?.message?.content || reply;
-    if (devanagariWordCoverage(rewritten) >= 0.35) return rewritten;
+    const rewritten = normalizeHindiStyle(data.choices?.[0]?.message?.content || reply);
+    if (devanagariWordCoverage(rewritten) >= 0.7) return rewritten;
     return "माफ़ कीजिए, अभी तकनीकी कारण से जवाब पूरी हिंदी में नहीं बन पाया। कृपया वही प्रश्न फिर से भेजें, मैं सिर्फ हिंदी में जवाब दूंगा।";
   } catch {
-    return reply;
+    return normalizeHindiStyle(reply);
   }
 }
 
