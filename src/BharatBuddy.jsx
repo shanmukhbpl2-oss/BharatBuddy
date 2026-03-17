@@ -146,6 +146,7 @@ export default function App() {
     ? ["💊 दवाई","💸 खर्च","🏛 योजनाएं","🛒 डील्स","🏦 EMI","📍 आसपास","📊 रिपोर्ट"]
     : ["💊 Medicine","💸 Expenses","🏛 Schemes","🛒 Deals","🏦 EMI","📍 Near Me","📊 Report"];
   const endR=useRef(null); const inpR=useRef(null);
+  const chatR=useRef(null);
   const filR=useRef(null); const recR=useRef(null);
 
   useEffect(()=>{ endR.current?.scrollIntoView({behavior:"smooth"}); },[msgs,load,panel]);
@@ -204,7 +205,13 @@ export default function App() {
     if(!s) return;
     if(!s.free&&!isPrem){setSubScr(true);return;}
     const panels=["medicine","expense","family","finance","shopping","kisan","location","report","weather","whatsapp"];
-    if(panels.includes(id)){setPanel(id);return;}
+    if(panels.includes(id)){
+      setPanel(id);
+      requestAnimationFrame(() => {
+        chatR.current?.scrollTo({ top: 0, behavior: "smooth" });
+      });
+      return;
+    }
     const label = svcText?.[s.id]?.label || s.label;
     push([{type:"user",text:label}]);
     setTimeout(()=>ai(`Help with ${label} in ${lang==="en"?"English":"Hinglish"}`),200);
@@ -377,17 +384,8 @@ export default function App() {
           )}
 
           {/* Chat messages */}
-          <div style={styled.chat}>
+          <div style={styled.chat} ref={chatR}>
             <div style={styled.datePill}>{new Date().toLocaleDateString(lang==="hi"?"hi-IN":"en-IN",{weekday:"long",day:"numeric",month:"long"})}</div>
-
-            {msgs.map(m=><Bubble key={m.id} m={m} onSvc={onSvc} onBtn={ai} bbl={styled.bbl} bbbl={styled.bbbl} ubble={styled.ubble} btext={styled.btext} btime={styled.btime}/>)}
-
-            {load&&(
-              <div style={{display:"flex",gap:8,alignItems:"flex-end",marginBottom:8}}>
-                <Av/>
-                <div style={styled.typingBubble}><Dot d={0} color={theme==="dark"?"rgba(255,255,255,0.25)":"rgba(15,23,42,0.35)"}/><Dot d={.18} color={theme==="dark"?"rgba(255,255,255,0.25)":"rgba(15,23,42,0.35)"}/><Dot d={.36} color={theme==="dark"?"rgba(255,255,255,0.25)":"rgba(15,23,42,0.35)"}/></div>
-              </div>
-            )}
 
             {panel==="medicine"&&<MedPane  onClose={()=>setPanel(null)} onAi={ai}/>}
             {panel==="expense" &&<ExpPane  onClose={()=>setPanel(null)}/>}
@@ -399,6 +397,15 @@ export default function App() {
             {panel==="report"  &&<RepPane  onClose={()=>setPanel(null)}/>}
             {panel==="weather" &&<WPane    onClose={()=>setPanel(null)} onAi={ai}/>}
             {panel==="whatsapp"&&<WhatsAppPane onClose={()=>setPanel(null)} theme={theme}/>}
+
+            {msgs.map(m=><Bubble key={m.id} m={m} onSvc={onSvc} onBtn={ai} bbl={styled.bbl} bbbl={styled.bbbl} ubble={styled.ubble} btext={styled.btext} btime={styled.btime}/>)}
+
+            {load&&(
+              <div style={{display:"flex",gap:8,alignItems:"flex-end",marginBottom:8}}>
+                <Av/>
+                <div style={styled.typingBubble}><Dot d={0} color={theme==="dark"?"rgba(255,255,255,0.25)":"rgba(15,23,42,0.35)"}/><Dot d={.18} color={theme==="dark"?"rgba(255,255,255,0.25)":"rgba(15,23,42,0.35)"}/><Dot d={.36} color={theme==="dark"?"rgba(255,255,255,0.25)":"rgba(15,23,42,0.35)"}/></div>
+              </div>
+            )}
 
             <div ref={endR}/>
           </div>
