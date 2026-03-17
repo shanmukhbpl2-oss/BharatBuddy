@@ -31,6 +31,7 @@ const DEALS=[{item:"Realme 12 Pro",a:"₹24,999",f:"₹23,499",m:"₹22,800",sav
 const FAM=[{name:"दादाजी",age:72,e:"👴",c:"#FF8C42",r:["BP tablet 7AM","Sugar tab 8AM"]},{name:"माँ",age:48,e:"👩",c:"#FF6BB5",r:["Vitamin D 1PM","Iron 9PM"]},{name:"Rahul",age:16,e:"👦",c:"#4E9FFF",r:["Study 6PM","Sleep 10PM"]}];
 
 const T = () => new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"});
+const pickLang = (lang, hi, en) => (lang === "hi" ? hi : en);
 
 const THEMES = {
   dark: {
@@ -214,7 +215,16 @@ export default function App() {
     }
     const label = svcText?.[s.id]?.label || s.label;
     push([{type:"user",text:label}]);
-    setTimeout(()=>ai(`Help with ${label} in ${lang==="en"?"English":"Hinglish"}`),200);
+    const prompts = {
+      emergency: pickLang(lang, "भारत में इमरजेंसी नंबर और तुरंत safety steps बताओ।", "Share India emergency numbers and immediate safety steps."),
+      news: pickLang(lang, "आज की मुख्य खबरें विषयवार छोटी points में बताओ।", "Share today's key headlines in short topic-wise points."),
+      schemes: pickLang(lang, "Top सरकारी योजनाएं: eligibility, documents, apply steps बताओ।", "List top government schemes with eligibility, docs, and apply steps."),
+      legal: pickLang(lang, "आम कानूनी अधिकार आसान भाषा में बताओ।", "Explain basic legal rights in simple language."),
+      homework: pickLang(lang, "क्लास 1-12 homework help के लिए study tips दो।", "Give study tips for Class 1-12 homework support."),
+      document: pickLang(lang, "Aadhaar, PAN और जरूरी documents की checklist दो।", "Share checklist for Aadhaar, PAN and essential documents."),
+      chat: pickLang(lang, "मुझसे दोस्त की तरह बात करो और practical मदद दो।", "Talk like a friendly assistant and give practical help."),
+    };
+    setTimeout(()=>ai(prompts[id] || `Help with ${label} in ${lang==="en"?"English":"Hinglish"}`),200);
   };
 
   const voice=()=>{
@@ -308,8 +318,8 @@ export default function App() {
           </div>
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <button style={{background:"rgba(255,214,10,0.15)",border:"1px solid rgba(255,214,10,0.3)",borderRadius:12,color:theme==="dark"?"rgba(255,255,255,0.6)":"rgba(0,0,0,0.6)",fontSize:13,padding:"6px 12px",cursor:"default",fontFamily:"inherit",transition:"all 0.2s",fontWeight:600}}>
-            🇮🇳 हिंदी
+          <button onClick={()=>setLang(lang==="hi"?"en":"hi")} style={{background:lang==="hi"?"rgba(255,214,10,0.15)":"rgba(100,150,255,0.15)",border:`1px solid ${lang==="hi"?"rgba(255,214,10,0.3)":"rgba(100,150,255,0.3)"}`,borderRadius:12,color:theme==="dark"?"rgba(255,255,255,0.6)":"rgba(0,0,0,0.6)",fontSize:13,padding:"6px 12px",cursor:"pointer",fontFamily:"inherit",transition:"all 0.2s",fontWeight:600}}>
+            {lang==="hi"?"🇮🇳 हिंदी":"🇬🇧 English"}
           </button>
           <button onClick={()=>setTheme(theme==="dark"?"light":"dark")} style={{background:theme==="dark"?"rgba(255,255,255,0.08)":"rgba(0,0,0,0.08)",border:`1px solid ${theme==="dark"?"rgba(255,255,255,0.1)":"rgba(0,0,0,0.1)"}`,borderRadius:12,color:theme==="dark"?"rgba(255,255,255,0.6)":"rgba(0,0,0,0.6)",fontSize:16,padding:"6px 12px",cursor:"pointer",fontFamily:"inherit",transition:"all 0.2s"}}>
             {theme==="dark"?"☀️":"🌙"}
@@ -387,16 +397,16 @@ export default function App() {
           <div style={styled.chat} ref={chatR}>
             <div style={styled.datePill}>{new Date().toLocaleDateString(lang==="hi"?"hi-IN":"en-IN",{weekday:"long",day:"numeric",month:"long"})}</div>
 
-            {panel==="medicine"&&<MedPane  onClose={()=>setPanel(null)} onAi={ai}/>}
-            {panel==="expense" &&<ExpPane  onClose={()=>setPanel(null)}/>}
-            {panel==="family"  &&<FamPane  onClose={()=>setPanel(null)} onAi={ai}/>}
-            {panel==="finance" &&<FinPane  onClose={()=>setPanel(null)} onAi={ai}/>}
-            {panel==="shopping"&&<ShopPane onClose={()=>setPanel(null)} onAi={ai}/>}
-            {panel==="kisan"   &&<KisanPane onClose={()=>setPanel(null)} onAi={ai}/>}
-            {panel==="location"&&<LocPane  onClose={()=>setPanel(null)} onAi={ai}/>}
-            {panel==="report"  &&<RepPane  onClose={()=>setPanel(null)}/>}
-            {panel==="weather" &&<WPane    onClose={()=>setPanel(null)} onAi={ai}/>}
-            {panel==="whatsapp"&&<WhatsAppPane onClose={()=>setPanel(null)} theme={theme}/>}
+            {panel==="medicine"&&<MedPane  onClose={()=>setPanel(null)} onAi={ai} lang={lang}/>} 
+            {panel==="expense" &&<ExpPane  onClose={()=>setPanel(null)} lang={lang}/>} 
+            {panel==="family"  &&<FamPane  onClose={()=>setPanel(null)} onAi={ai} lang={lang}/>} 
+            {panel==="finance" &&<FinPane  onClose={()=>setPanel(null)} onAi={ai} lang={lang}/>} 
+            {panel==="shopping"&&<ShopPane onClose={()=>setPanel(null)} onAi={ai} lang={lang}/>} 
+            {panel==="kisan"   &&<KisanPane onClose={()=>setPanel(null)} onAi={ai} lang={lang}/>} 
+            {panel==="location"&&<LocPane  onClose={()=>setPanel(null)} onAi={ai} lang={lang}/>} 
+            {panel==="report"  &&<RepPane  onClose={()=>setPanel(null)} lang={lang}/>} 
+            {panel==="weather" &&<WPane    onClose={()=>setPanel(null)} onAi={ai} lang={lang}/>} 
+            {panel==="whatsapp"&&<WhatsAppPane onClose={()=>setPanel(null)} theme={theme} lang={lang}/>} 
 
             {msgs.map(m=><Bubble key={m.id} m={m} onSvc={onSvc} onBtn={ai} bbl={styled.bbl} bbbl={styled.bbbl} ubble={styled.ubble} btext={styled.btext} btime={styled.btime}/>)}
 
@@ -720,7 +730,7 @@ const MC = {
 /* ═══════════════════════════════════════════════
    PANELS
 ═══════════════════════════════════════════════ */
-function Pane({icon,title,sub,col,onClose,children}) {
+function Pane({icon,title,sub,col,onClose,children,closeLabel="Close"}) {
   return (
     <div style={{background:"#0C1524",borderRadius:22,marginBottom:12,overflow:"hidden",border:`1px solid ${col}28`,animation:"slideUp 0.3s cubic-bezier(.34,1.4,.64,1)",boxShadow:`0 20px 60px rgba(0,0,0,0.7),0 0 0 1px ${col}18`}}>
       <div style={{background:`linear-gradient(135deg,${col}15,transparent)`,padding:"13px 16px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${col}12`}}>
@@ -731,19 +741,19 @@ function Pane({icon,title,sub,col,onClose,children}) {
             <div style={{fontSize:10,color:"rgba(255,255,255,0.35)",marginTop:1}}>{sub}</div>
           </div>
         </div>
-        <button onClick={onClose} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,color:"rgba(255,255,255,0.45)",fontSize:11,padding:"5px 12px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,transition:"all 0.15s"}}>✕ Close</button>
+        <button onClick={onClose} style={{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:10,color:"rgba(255,255,255,0.45)",fontSize:11,padding:"5px 12px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,transition:"all 0.15s"}}>✕ {closeLabel}</button>
       </div>
       {children}
     </div>
   );
 }
 
-function MedPane({onClose,onAi}) {
+function MedPane({onClose,onAi,lang="hi"}) {
   const [rems,setR]=useState([{n:"Metformin 500mg",t:"08:00",done:true,c:"#FF4E6A"},{n:"Vitamin D3",t:"13:00",done:true,c:"#FF8C42"},{n:"Amlodipine 5mg",t:"21:00",done:false,c:"#A78BFF"}]);
   const [nn,sNn]=useState(""); const [nt,sNt]=useState("08:00"); const [add,sAdd]=useState(false);
   const done=rems.filter(r=>r.done).length;
   return (
-    <Pane icon="💊" title="Medicine Manager" sub={`${done}/${rems.length} आज ली`} col="#FF4E6A" onClose={onClose}>
+    <Pane icon="💊" title={pickLang(lang,"दवाई प्रबंधक","Medicine Manager")} sub={pickLang(lang,`${done}/${rems.length} आज ली`,`${done}/${rems.length} taken today`)} col="#FF4E6A" onClose={onClose} closeLabel={pickLang(lang,"बंद करें","Close")}>
       <div style={{padding:"12px 16px"}}>
         <div style={{height:5,background:"rgba(255,78,106,0.1)",borderRadius:3,marginBottom:12}}>
           <div style={{width:`${(done/rems.length)*100}%`,height:"100%",background:done===rems.length?"#00D09C":"#FF4E6A",borderRadius:3,transition:"width 0.6s ease"}}/>
@@ -778,13 +788,13 @@ function MedPane({onClose,onAi}) {
   );
 }
 
-function ExpPane({onClose}) {
+function ExpPane({onClose,lang="hi"}) {
   const CATS=[{e:"🍛",c:"#FF8C42"},{e:"🚗",c:"#4E9FFF"},{e:"💊",c:"#FF4E6A"},{e:"📚",c:"#A78BFF"},{e:"🏠",c:"#00D09C"},{e:"📦",c:"#78909C"}];
   const [exps,sE]=useState([{cat:"🍛",l:"किराना",a:350,t:"आज"},{cat:"🚗",l:"Auto",a:80,t:"आज"},{cat:"💊",l:"दवाई",a:200,t:"कल"}]);
   const [amt,sA]=useState(""); const [lbl,sL]=useState(""); const [cat,sC]=useState("🍛");
   const tot=exps.filter(e=>e.t==="आज").reduce((s,e)=>s+e.a,0);
   return (
-    <Pane icon="💸" title="खर्च Tracker" sub={`आज: ₹${tot}`} col="#FF8C42" onClose={onClose}>
+    <Pane icon="💸" title={pickLang(lang,"खर्च ट्रैकर","Expense Tracker")} sub={pickLang(lang,`आज: ₹${tot}`,`Today: ₹${tot}`)} col="#FF8C42" onClose={onClose} closeLabel={pickLang(lang,"बंद करें","Close")}>
       <div style={{padding:"12px 16px"}}>
         <div style={{display:"flex",gap:6,marginBottom:10}}>
           {CATS.map(({e,c})=><button key={e} onClick={()=>sC(e)} style={{fontSize:20,width:38,height:38,borderRadius:11,background:cat===e?`${c}22`:"rgba(255,255,255,0.04)",border:cat===e?`2px solid ${c}`:"1px solid rgba(255,255,255,0.07)",cursor:"pointer",transition:"all 0.15s"}}>{e}</button>)}
@@ -808,10 +818,10 @@ function ExpPane({onClose}) {
   );
 }
 
-function FamPane({onClose,onAi}) {
+function FamPane({onClose,onAi,lang="hi"}) {
   const [sel,sSel]=useState(null);
   return (
-    <Pane icon="👨‍👩‍👧" title="Family Manager" sub={`${FAM.length} members`} col="#FF6BB5" onClose={onClose}>
+    <Pane icon="👨‍👩‍👧" title={pickLang(lang,"परिवार प्रबंधक","Family Manager")} sub={pickLang(lang,`${FAM.length} सदस्य`,`${FAM.length} members`)} col="#FF6BB5" onClose={onClose} closeLabel={pickLang(lang,"बंद करें","Close")}>
       <div style={{padding:"10px 16px"}}>
         {!sel?FAM.map((m,i)=>(
           <div key={i} onClick={()=>sSel(m)} style={{display:"flex",alignItems:"center",gap:11,background:"rgba(255,255,255,0.03)",borderRadius:14,padding:"12px 13px",marginBottom:7,cursor:"pointer",border:`1px solid ${m.c}20`,transition:"all 0.2s"}}
@@ -845,11 +855,11 @@ function FamPane({onClose,onAi}) {
   );
 }
 
-function FinPane({onClose,onAi}) {
+function FinPane({onClose,onAi,lang="hi"}) {
   const [L,sL]=useState(""); const [R,sR]=useState(""); const [M,sM]=useState(""); const [emi,sE]=useState(null);
   const calc=()=>{const P=+L,r=+R/12/100,n=+M;if(!P||!r||!n)return;const e=P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);sE({m:Math.round(e),t:Math.round(e*n),i:Math.round(e*n-P)});};
   return (
-    <Pane icon="🏦" title="Loan & Finance" sub="EMI Calculator" col="#A78BFF" onClose={onClose}>
+    <Pane icon="🏦" title={pickLang(lang,"लोन और फाइनेंस","Loan & Finance")} sub={pickLang(lang,"EMI कैलकुलेटर","EMI Calculator")} col="#A78BFF" onClose={onClose} closeLabel={pickLang(lang,"बंद करें","Close")}>
       <div style={{padding:"12px 16px"}}>
         {[["Loan Amount ₹",L,sL,"₹ e.g. 500000"],["Interest Rate %",R,sR,"e.g. 8.5"],["Tenure (Months)",M,sM,"e.g. 60"]].map(([l,v,s,p],i)=>(
           <div key={i} style={{marginBottom:9}}>
@@ -876,11 +886,11 @@ function FinPane({onClose,onAi}) {
   );
 }
 
-function ShopPane({onClose,onAi}) {
+function ShopPane({onClose,onAi,lang="hi"}) {
   const [q,sQ]=useState(""); const [res,sR]=useState(null); const [ld,sLd]=useState(false);
   const go=()=>{if(!q.trim())return;sLd(true);const f=DEALS.find(d=>d.item.toLowerCase().includes(q.toLowerCase()));setTimeout(()=>{sR(f||"none");sLd(false);},700);};
   return (
-    <Pane icon="🛒" title="Shopping Assistant" sub="Amazon vs Flipkart vs Meesho" col="#FFD60A" onClose={onClose}>
+    <Pane icon="🛒" title={pickLang(lang,"शॉपिंग सहायक","Shopping Assistant")} sub="Amazon vs Flipkart vs Meesho" col="#FFD60A" onClose={onClose} closeLabel={pickLang(lang,"बंद करें","Close")}>
       <div style={{padding:"12px 16px"}}>
         <div style={{display:"flex",gap:7,marginBottom:10}}>
           <input value={q} onChange={e=>sQ(e.target.value)} onKeyDown={e=>e.key==="Enter"&&go()} placeholder="Product search करें..." style={{...S.inp2,flex:1}}/>
@@ -912,9 +922,9 @@ function ShopPane({onClose,onAi}) {
   );
 }
 
-function KisanPane({onClose,onAi}) {
+function KisanPane({onClose,onAi,lang="hi"}) {
   return (
-    <Pane icon="🌾" title="Kisan Help" sub="Mandi Prices • Fasal • Yojana" col="#7EE787" onClose={onClose}>
+    <Pane icon="🌾" title={pickLang(lang,"किसान सहायता","Farmer Help")} sub={pickLang(lang,"मंडी रेट • फसल • योजना","Mandi • Crop • Schemes")} col="#7EE787" onClose={onClose} closeLabel={pickLang(lang,"बंद करें","Close")}>
       <div style={{padding:"12px 16px"}}>
         <div style={{fontSize:10,color:"rgba(255,255,255,0.3)",fontWeight:700,textTransform:"uppercase",letterSpacing:0.8,marginBottom:8}}>📊 आज की Mandi Rates</div>
         {MANDI.map((m,i)=>(
@@ -931,11 +941,11 @@ function KisanPane({onClose,onAi}) {
   );
 }
 
-function LocPane({onClose,onAi}) {
+function LocPane({onClose,onAi,lang="hi"}) {
   const [loc,sLoc]=useState(false); const [cat,sCat]=useState("h");
   const NEAR={h:["🏥 AIIMS Delhi — 2.3 km","🏥 Safdarjung — 3.1 km","🏥 RML — 4.2 km"],p:["💊 Apollo Pharmacy — 0.4 km","💊 MedPlus — 0.8 km","💊 Jan Aushadhi — 1.2 km"],b:["🩸 Blood Bank AIIMS — 2.3 km","🩸 Red Cross — 3.5 km"]};
   return (
-    <Pane icon="📍" title="Near Me" sub="GPS based nearby services" col="#22D3EE" onClose={onClose}>
+    <Pane icon="📍" title={pickLang(lang,"आसपास सेवाएं","Near Me")} sub={pickLang(lang,"GPS आधारित सेवाएं","GPS based nearby services")} col="#22D3EE" onClose={onClose} closeLabel={pickLang(lang,"बंद करें","Close")}>
       {!loc?(
         <div style={{padding:"18px 16px",textAlign:"center"}}>
           <div style={{fontSize:48,marginBottom:10}}>📍</div>
@@ -964,10 +974,10 @@ function LocPane({onClose,onAi}) {
   );
 }
 
-function RepPane({onClose}) {
+function RepPane({onClose,lang="hi"}) {
   const D=[{c:"🍛 खाना",a:3200,m:4000,g:"#FF8C42"},{c:"🚗 यातायात",a:1800,m:2000,g:"#4E9FFF"},{c:"💊 दवाई",a:800,m:1000,g:"#FF4E6A"},{c:"📚 पढ़ाई",a:500,m:1000,g:"#A78BFF"},{c:"🏠 घर",a:5000,m:5000,g:"#00D09C"}];
   return (
-    <Pane icon="📊" title="Monthly Report" sub="March 2026" col="#FBBF24" onClose={onClose}>
+    <Pane icon="📊" title={pickLang(lang,"मासिक रिपोर्ट","Monthly Report")} sub={pickLang(lang,"मार्च 2026","March 2026")} col="#FBBF24" onClose={onClose} closeLabel={pickLang(lang,"बंद करें","Close")}>
       <div style={{padding:"12px 16px"}}>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
           {[["₹11,300","Total खर्च","#FF8C42"],["87%","Medicine","#00D09C"],["₹4,000","Schemes","#22D3EE"]].map(([v,l,c],i)=>(
@@ -994,7 +1004,7 @@ function RepPane({onClose}) {
   );
 }
 
-function WhatsAppPane({onClose, theme="dark"}) {
+function WhatsAppPane({onClose, theme="dark", lang="hi"}) {
   const [checking, setChecking] = useState(true);
   const [status, setStatus] = useState({ ok:false, users:0, error:"" });
   const t = THEMES[theme];
@@ -1026,18 +1036,18 @@ function WhatsAppPane({onClose, theme="dark"}) {
   };
 
   return (
-    <Pane icon="💬" title="WhatsApp AI Bot" sub={status.ok?"Webhook Active ✓":"Setup Required"} col="#25D366" onClose={onClose}>
+    <Pane icon="💬" title={pickLang(lang,"व्हाट्सऐप AI बॉट","WhatsApp AI Bot")} sub={status.ok?pickLang(lang,"Webhook सक्रिय ✓","Webhook Active ✓"):pickLang(lang,"सेटअप बाकी","Setup Required")} col="#25D366" onClose={onClose} closeLabel={pickLang(lang,"बंद करें","Close")}>
       <div style={{padding:"14px 16px"}}>
         <div style={{background:isLight?"rgba(37,211,102,0.1)":"rgba(37,211,102,0.08)",borderRadius:14,padding:"11px 14px",marginBottom:12,border:"1px solid rgba(37,211,102,0.24)",display:"flex",alignItems:"center",gap:10}}>
           <div style={{width:10,height:10,borderRadius:"50%",background:status.ok?"#25D366":"#FF8C42",boxShadow:status.ok?"0 0 10px #25D366":"none"}}/>
           <div style={{flex:1}}>
-            <div style={{fontSize:12,fontWeight:800,color:status.ok?"#25D366":"#FF8C42"}}>{checking?"Status check...":status.ok?"Webhook Connected":"Connection Pending"}</div>
-            <div style={{fontSize:10,color:t.subText}}>Active WhatsApp users: {status.users}</div>
+            <div style={{fontSize:12,fontWeight:800,color:status.ok?"#25D366":"#FF8C42"}}>{checking?pickLang(lang,"स्थिति जांच...","Status check..."):status.ok?pickLang(lang,"Webhook कनेक्टेड","Webhook Connected"):pickLang(lang,"कनेक्शन लंबित","Connection Pending")}</div>
+            <div style={{fontSize:10,color:t.subText}}>{pickLang(lang,"Active WhatsApp users","Active WhatsApp users")}: {status.users}</div>
           </div>
-          <button onClick={checkStatus} style={{...S.abtn,padding:"7px 11px",fontSize:10,background:isLight?"rgba(0,0,0,0.06)":"rgba(255,255,255,0.06)",color:t.text,border:`1px solid ${t.border}`}}>Refresh</button>
+          <button onClick={checkStatus} style={{...S.abtn,padding:"7px 11px",fontSize:10,background:isLight?"rgba(0,0,0,0.06)":"rgba(255,255,255,0.06)",color:t.text,border:`1px solid ${t.border}`}}>{pickLang(lang,"रीफ्रेश","Refresh")}</button>
         </div>
 
-        <div style={{fontSize:12,fontWeight:700,color:t.text,marginBottom:6}}>Setup Steps (AiSensy)</div>
+        <div style={{fontSize:12,fontWeight:700,color:t.text,marginBottom:6}}>{pickLang(lang,"Setup Steps (AiSensy)","Setup Steps (AiSensy)")}</div>
         <div style={{fontSize:11,color:t.subText,lineHeight:1.65,marginBottom:10}}>
           1. AiSensy dashboard me webhook URL set करें।
           <br/>2. URL me yeh use करें: <b style={{color:t.text}}>{webhookUrl}</b>
@@ -1056,11 +1066,11 @@ function WhatsAppPane({onClose, theme="dark"}) {
   );
 }
 
-function WPane({onClose,onAi}) {
+function WPane({onClose,onAi,lang="hi"}) {
   const W=[{n:"Delhi",t:32,i:"☀️",h:65,d:"गर्म धूप",w:"⚠️ पानी पिएं"},{n:"Mumbai",t:28,i:"🌤",h:80,d:"उमस भरा",w:"🌧 शाम बारिश"},{n:"Lucknow",t:35,i:"🌡",h:55,d:"बहुत गर्म",w:"⚠️ लू का खतरा"}];
   const [ci,sCi]=useState(0); const w=W[ci];
   return (
-    <Pane icon="🌤" title="मौसम" sub="Live Forecast" col="#4E9FFF" onClose={onClose}>
+    <Pane icon="🌤" title={pickLang(lang,"मौसम","Weather")} sub={pickLang(lang,"लाइव पूर्वानुमान","Live Forecast")} col="#4E9FFF" onClose={onClose} closeLabel={pickLang(lang,"बंद करें","Close")}>
       <div style={{padding:"12px 16px"}}>
         <div style={{display:"flex",gap:6,marginBottom:10}}>
           {W.map((c,i)=><button key={i} onClick={()=>sCi(i)} style={{...S.qBtn,background:ci===i?"rgba(78,159,255,0.2)":"rgba(255,255,255,0.04)",borderColor:ci===i?"rgba(78,159,255,0.4)":"rgba(255,255,255,0.07)",color:ci===i?"#93C5FD":"rgba(255,255,255,0.4)"}}>{c.n}</button>)}
