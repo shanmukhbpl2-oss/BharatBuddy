@@ -42,6 +42,43 @@ function isNewsIntent(text = "") {
   return ["news", "समाचार", "खबर", "ख़बर", "headlines", "today news", "aaj ki khabar", "आज की खबर"].some((k) => t.includes(k));
 }
 
+function hasDevanagari(text = "") {
+  return /[\u0900-\u097F]/.test(String(text));
+}
+
+async function rewriteToHindiIfNeeded(reply, userLang, apiKey) {
+  if (userLang === "en") return reply;
+  if (hasDevanagari(reply)) return reply;
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        max_tokens: 450,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Convert the assistant reply to simple Hindi/Hinglish (mostly Devanagari), keep meaning same, keep it concise, and keep emojis/formatting where possible.",
+          },
+          { role: "user", content: String(reply || "") },
+        ],
+      }),
+    });
+
+    if (!response.ok) return reply;
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || reply;
+  } catch {
+    return reply;
+  }
+}
+
 function fallbackNewsReply(lang = "hi") {
   if (lang === "en") {
     return "I can help with Hindi news-style summaries by topic, but I do not have guaranteed live web access for real-time headlines. Please share your topic (government schemes, farming, health, jobs, or local news), and I will give a short update in simple points.";
@@ -221,6 +258,8 @@ app.post("/api/chat", async (req, res) => {
       reply = fallbackNewsReply(userLang);
     }
 
+    reply = await rewriteToHindiIfNeeded(reply, userLang, apiKey);
+
     console.log(`✅ Chat reply sent - Length: ${reply.length} chars`);
     res.json({ reply });
   } catch (err) {
@@ -239,9 +278,13 @@ app.post("/api/chat", async (req, res) => {
 const whatsappConversations = new Map();
 
 // Helper: Get AI reply from OpenAI
-async function getClaudeReply(messages) {
+async function getClaudeReply(messages, userLang = "hi") {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return "⚠️ API key not configured";
+
+  const languageInstruction = userLang === "en"
+    ? "Reply in clear, simple English."
+    : "Reply in natural Hindi/Hinglish with mostly Devanagari words. Avoid pure English phrasing.";
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -253,7 +296,7 @@ async function getClaudeReply(messages) {
       model: "gpt-4o-mini",
       max_tokens: 1000,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: `${SYSTEM_PROMPT}\n\nLANGUAGE MODE:\n- ${languageInstruction}` },
         ...messages
       ],
     }),
@@ -265,7 +308,9 @@ async function getClaudeReply(messages) {
   }
 
   const data = await response.json();
-  return data.choices?.[0]?.message?.content || "माफ़ करें, कुछ गड़बड़ हो गई। 🙏";
+  let reply = data.choices?.[0]?.message?.content || "माफ़ करें, कुछ गड़बड़ हो गई। 🙏";
+  reply = await rewriteToHindiIfNeeded(reply, userLang, apiKey);
+  return reply;
 }
 
 // Helper: Send reply back via AiSensy
@@ -336,7 +381,8 @@ app.post("/webhook/aisensy", async (req, res) => {
     history.push({ role: "user", content: userText });
 
     // Get AI reply
-    const reply = await getClaudeReply(history);
+    const userLang = hasDevanagari(userText) ? "hi" : "hi";
+    const reply = await getClaudeReply(history, userLang);
     history.push({ role: "assistant", content: reply });
 
     // Send reply back via WhatsApp

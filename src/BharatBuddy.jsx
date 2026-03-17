@@ -168,6 +168,8 @@ export default function App() {
     if(load) return;
     push([{type:"user",text:img?"📸 "+text:text}]);
     setInput(""); setLoad(true);
+    const hasHindiInput = /[\u0900-\u097F]/.test(String(text || ""));
+    const effectiveLang = hasHindiInput ? "hi" : lang;
     
     try {
       const response = await fetch("/api/chat", {
@@ -176,7 +178,7 @@ export default function App() {
         body: JSON.stringify({
           message: text,
           image: img || undefined,
-          lang,
+          lang: effectiveLang,
           history: msgs.filter(m => m.type !== "photo").map(m => ({
             role: m.type === "user" ? "user" : "assistant",
             content: m.text
