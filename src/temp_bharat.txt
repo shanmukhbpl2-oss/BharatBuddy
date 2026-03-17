@@ -1,9 +1,0 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-
-/* -------------------------------------------------------
-   BHARATBUDDY — ABSOLUTE BEST UI
-   Theme: Midnight India — Deep space + Saffron + Emerald
-   Font: Plus Jakarta Sans + Noto Sans Devanagari
-------------------------------------------------------- */
-
-const SYS = `You are BharatBuddy, India's most trusted AI life assistant. Speak in warm Hinglish. Be like a caring elder sibling. Help with medicine, expenses, government schemes, legal, kisan, shopping, loans, family, homework, emergency. Keep responses to 3-5 lines. Use emojis. For health say "Doctor se zaroor milein ??". Use ? for money.`
