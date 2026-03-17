@@ -46,6 +46,29 @@ function hasDevanagari(text = "") {
   return /[\u0900-\u097F]/.test(String(text));
 }
 
+function hasHindiIntent(text = "") {
+  const t = String(text).toLowerCase();
+  if (hasDevanagari(t)) return true;
+  return [
+    "hindi",
+    "hinglish",
+    "jawab",
+    "javaab",
+    "batao",
+    "bataye",
+    "batado",
+    "kya",
+    "kaise",
+    "yojana",
+    "dawai",
+    "kharch",
+    "samjhao",
+    "mujhe",
+    "kripya",
+    "please hindi",
+  ].some((k) => t.includes(k));
+}
+
 async function rewriteToHindiIfNeeded(reply, userLang, apiKey) {
   if (userLang === "en") return reply;
   if (hasDevanagari(reply)) return reply;
@@ -203,7 +226,8 @@ app.post("/api/chat", async (req, res) => {
     const specificScheme = detectSpecificScheme(latestUserText);
     const newsIntent = isNewsIntent(latestUserText);
 
-    const userLang = (language || lang || "hi").toLowerCase();
+    const requestedLang = (language || lang || "hi").toLowerCase();
+    const userLang = hasHindiIntent(latestUserText) ? "hi" : requestedLang;
     const languageInstruction = userLang === "en"
       ? "Reply in clear, simple English. Do not switch to Hindi unless user asks."
       : "Reply in natural Hindi/Hinglish with mostly Devanagari words. Avoid pure English phrasing.";
